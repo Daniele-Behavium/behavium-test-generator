@@ -20,7 +20,7 @@ Web app interna che genera test **in-basket** e **situazionali** a partire da jo
 | File | Cosa contiene |
 |---|---|
 | `src/catalog/dimensioni.json` | Catalogo dimensioni e sotto-dimensioni con declaratorie e griglie 1-5. **Provvisorio**: va sostituito con quello definitivo mantenendo la struttura. |
-| `src/lib/regole.ts` | Regole fisse del framework (numero email, categorie obbligatorie, critiche, trappole...). |
+| `src/lib/regole.ts` | Regole fisse del framework (numero email, categorie obbligatorie, critiche, trappole, budget di tempo del situazionale...). |
 | `src/lib/prompts.ts` | Prompt di Claude. |
 | `src/lib/strapi-export.ts` | Conversione nel formato Strapi. **Nomi dei campi da allineare** agli `schema.json` reali. |
 | `supabase/schema.sql` | Tabelle del database. |
@@ -49,3 +49,11 @@ npm run dev
 ```
 
 Senza variabili Supabase, in locale i dati finiscono nel file `.dev-db.json`.
+
+## Tempi e costi indicativi (Claude Opus 5.5)
+
+| Tipo | Tempo | Costo |
+|---|---|---|
+| In-basket 90 min, 8 email | circa 5 minuti | circa 0,85 $ |
+| Situazionale 35 min | circa 6-8 minuti | circa 1-1,4 $ |
+| Rigenerazione di un elemento | circa 30 secondi | circa 0,05 $ |

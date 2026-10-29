@@ -16,7 +16,8 @@ Principi non negoziabili:
 - La difficoltà si calibra su seniority e durata, senza sommergere il candidato: uno scenario troppo difficile produce dati inutili.
 - Nomi, aziende e dati sono fittizi ma realistici e coerenti tra loro in tutto il test.
 - Scrivi in modo chiaro e professionale, senza enfasi. Non usare il trattino lungo (—).
-- Usa solo gli id del catalogo fornito. Non inventare dimensioni o sotto-dimensioni.`;
+- Usa solo gli id del catalogo fornito. Non inventare dimensioni o sotto-dimensioni.
+- Nei testi in prosa (motivazioni, comportamento atteso) chiama le sotto-dimensioni con il loro nome (es. "Controllo epistemico"), mai con l'id tecnico.`;
 
 export function bloccoRegoleApprese(regole: Regola[]): string {
   if (!regole.length) return "";

@@ -29,7 +29,11 @@ export const REGOLE = {
   situational: {
     domandeMin: 4,
     domandeMax: 30,
-    minutiPerDomanda: 2, // numero domande suggerito = durata / minutiPerDomanda
+    // Tempo medio stimato per rispondere: la somma deve stare nella durata del test.
+    minutiDomandaAScelta: 1.5,
+    minutiDomandaAperta: 4,
+    minutiExtraOutputAI: 1.5, // leggere e valutare un output AI simulato
+    tolleranzaTempo: 1.1,
     blocchiMin: 1,
     blocchiMax: 4,
     aperteMinConsigliate: 2,
@@ -67,7 +71,9 @@ export function numeroItemSuggerito(tipo: InputTest["tipo"], durata: number): nu
     return Math.min(r.emailMax, Math.max(r.emailMin, Math.round(durata / r.minutiPerEmail)));
   }
   const r = REGOLE.situational;
-  return Math.min(24, Math.max(6, Math.round(durata / r.minutiPerDomanda)));
+  // stima con un mix di circa 1/3 aperte e 2/3 a scelta
+  const medio = (r.minutiDomandaAperta + 2 * r.minutiDomandaAScelta) / 3;
+  return Math.min(24, Math.max(r.domandeMin, Math.round(durata / medio)));
 }
 
 /** Regole in formato testo per i prompt. */
@@ -88,7 +94,8 @@ export function regolePerPrompt(tipo: InputTest["tipo"], durata: number): string
   }
   const r = REGOLE.situational;
   return [
-    `- Numero di domande: circa ${n} (consentito ${r.domandeMin}-${r.domandeMax}), organizzate in ${r.blocchiMin}-${r.blocchiMax} blocchi.`,
+    `- Budget di tempo: ${durata} minuti. Stima ${r.minutiDomandaAScelta} min per domanda a scelta, ${r.minutiDomandaAperta} min per domanda aperta, +${r.minutiExtraOutputAI} min se c'è un output AI da valutare. Il tempo totale stimato NON deve superare ${Math.round(durata * r.tolleranzaTempo)} minuti (orientativamente ${n} domande con un mix di aperte e a scelta; meno domande se molte sono aperte).`,
+    `- Domande organizzate in ${r.blocchiMin}-${r.blocchiMax} blocchi (consentite ${r.domandeMin}-${r.domandeMax} domande).`,
     `- Ogni domanda è una situazione lavorativa concreta. Può essere aperta (risposta scritta) o a scelta (3-5 alternative di comportamento, esattamente una "migliore").`,
     `- Consigliate almeno ${r.aperteMinConsigliate} domande aperte e almeno ${r.trappoleMinConsigliate} domanda con trappola. Le trappole sulle AI skill stanno di solito in un "output AI simulato" pre-scritto (mai AI reale) che il candidato deve valutare.`,
     `- Ogni domanda testa 1 o al massimo ${REGOLE.sottoDimensioniMaxPerItem} sotto-dimensioni tra quelle selezionate; ogni sotto-dimensione selezionata è testata da almeno 1 domanda (meglio ${REGOLE.copertureConsigliate}).`,
@@ -130,6 +137,14 @@ function controllaPesi(selezione: SelezioneDimensione[], out: Problema[]) {
   }
 }
 
+export function tempoStimato(piano: { rispostaAScelta?: boolean; conOutputAI?: boolean }[]): number {
+  const r = REGOLE.situational;
+  return piano.reduce(
+    (t, d) => t + (d.rispostaAScelta ? r.minutiDomandaAScelta : r.minutiDomandaAperta) + (d.conOutputAI ? r.minutiExtraOutputAI : 0),
+    0
+  );
+}
+
 /** Controllo del piano (prima di generare i contenuti). */
 export function validaPiano(tipo: InputTest["tipo"], durata: number, scenario: Scenario, selezione: SelezioneDimensione[]): Problema[] {
   const out: Problema[] = [];
@@ -162,6 +177,9 @@ export function validaPiano(tipo: InputTest["tipo"], durata: number, scenario: S
     const r = REGOLE.situational;
     if (p.length < r.domandeMin || p.length > r.domandeMax)
       out.push({ livello: "errore", messaggio: `Il piano ha ${p.length} domande: servono tra ${r.domandeMin} e ${r.domandeMax}.` });
+    const tempo = tempoStimato(p);
+    if (tempo > durata * r.tolleranzaTempo)
+      out.push({ livello: "errore", messaggio: `Tempo stimato ${Math.round(tempo)} minuti, oltre la durata di ${durata}: riduci le domande o sostituisci alcune aperte con domande a scelta.` });
     const nb = scenario.blocchi?.length ?? 0;
     if (nb < r.blocchiMin || nb > r.blocchiMax) out.push({ livello: "errore", messaggio: `Blocchi: ${nb}. Servono tra ${r.blocchiMin} e ${r.blocchiMax}.` });
     const titoli = new Set((scenario.blocchi ?? []).map((b) => b.titolo));
