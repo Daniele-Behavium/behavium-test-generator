@@ -1,0 +1,222 @@
+{
+  "versione": "provvisorio-2026-10-29",
+  "note": "CATALOGO PROVVISORIO. Le sotto-dimensioni di AI Readiness riprendono le declaratorie viste in Strapi; tutto il resto (incluse le griglie 1-5) è un segnaposto da sostituire con il catalogo definitivo validato dagli psicologi. Per sostituirlo basta rimpiazzare questo file mantenendo la stessa struttura.",
+  "dimensioni": [
+    {
+      "id": "ai-readiness",
+      "nome": "AI Readiness",
+      "tipoSkill": "ai",
+      "declaratoria": "Capacità di integrare l'IA nel proprio lavoro in modo efficace e responsabile, mantenendo il controllo umano su obiettivi, verifiche e decisioni.",
+      "sottoDimensioni": [
+        {
+          "id": "air-comprensione-compito",
+          "nome": "Comprensione del compito",
+          "declaratoria": "Capacità di distinguere le diverse componenti del lavoro, individuando quali possono beneficiare dell'IA e quali richiedono controllo o responsabilità umana, in coerenza con l'obiettivo.",
+          "griglia": {
+            "1": "Delega all'IA l'intero compito senza scomporlo, oppure non la usa dove sarebbe utile; non distingue cosa richiede giudizio umano.",
+            "2": "Riconosce alcune parti delegabili ma in modo intuitivo; confonde attività di supporto e decisioni.",
+            "3": "Separa correttamente le parti principali del compito e indica dove serve controllo umano.",
+            "4": "Scompone il compito in modo ragionato, motiva cosa delegare e cosa trattenere in base all'obiettivo e ai rischi.",
+            "5": "Come 4, e anticipa le parti in cui l'IA potrebbe sembrare utile ma introdurre rischi, ridefinendo il lavoro di conseguenza."
+          },
+          "provvisorio": true
+        },
+        {
+          "id": "air-contestualizzazione",
+          "nome": "Contestualizzazione",
+          "declaratoria": "Capacità di tenere conto della natura dei materiali, della presenza di dati sensibili, del destinatario e dei vincoli della situazione, prevedendo quando necessario anonimizzazione, esclusione o trattamento prudente dei dati.",
+          "griglia": {
+            "1": "Inserisce dati personali o riservati nello strumento senza alcuna cautela; ignora destinatario e vincoli.",
+            "2": "Riconosce la sensibilità dei dati solo se evidente; cautele parziali o incoerenti.",
+            "3": "Individua i dati sensibili principali e li anonimizza o esclude; tiene conto del destinatario.",
+            "4": "Valuta sistematicamente natura dei materiali, dati sensibili e vincoli; adatta l'uso dello strumento al contesto.",
+            "5": "Come 4, e segnala rischi non ovvi (dati indiretti, combinazioni identificanti, vincoli normativi) proponendo un trattamento sicuro."
+          },
+          "provvisorio": true
+        },
+        {
+          "id": "air-strutturazione-analisi",
+          "nome": "Strutturazione dell'analisi",
+          "declaratoria": "Capacità di scomporre il lavoro in fasi e di assegnare all'IA compiti specifici e pertinenti (ad esempio organizzare informazioni, confrontare fonti o generare alternative), mantenendo distinta la decisione finale.",
+          "griglia": {
+            "1": "Usa l'IA con una sola richiesta generica; nessuna struttura del lavoro.",
+            "2": "Scompone poco; richieste all'IA vaghe o poco pertinenti.",
+            "3": "Organizza il lavoro in fasi e assegna all'IA compiti pertinenti; la decisione resta propria.",
+            "4": "Fasi chiare, richieste mirate e iterate; usa l'IA per confrontare e generare alternative.",
+            "5": "Come 4, con un processo efficiente e trasferibile; integra i risultati dell'IA in una decisione chiaramente propria."
+          },
+          "provvisorio": true
+        },
+        {
+          "id": "air-controllo-epistemico",
+          "nome": "Controllo epistemico",
+          "declaratoria": "Capacità di prevedere verifiche mirate su fonti e conclusioni, di distinguere dati da interpretazioni, di limitare le inferenze non supportate e di mantenere prudenza su ipotesi causali e raccomandazioni.",
+          "griglia": {
+            "1": "Accetta l'output così com'è; non rileva errori, numeri sbagliati o norme inventate.",
+            "2": "Verifica solo superficialmente; rileva errori evidenti solo se segnalati.",
+            "3": "Verifica i punti principali; distingue dati da interpretazioni nella maggior parte dei casi.",
+            "4": "Verifiche mirate su fonti e calcoli; segnala inferenze non supportate e ipotesi causali deboli.",
+            "5": "Come 4, e formula esplicitamente il grado di certezza delle conclusioni e cosa servirebbe per confermarle."
+          },
+          "provvisorio": true
+        },
+        {
+          "id": "air-definizione-output",
+          "nome": "Definizione dell'output",
+          "declaratoria": "Capacità di stabilire quali risultati richiedere all'IA, come utilizzarli e come integrarli nella nota finale, mantenendo il controllo umano su priorità e raccomandazioni.",
+          "griglia": {
+            "1": "Usa l'output dell'IA come prodotto finale senza adattarlo.",
+            "2": "Adatta l'output in modo minimo; il risultato resta generico.",
+            "3": "Definisce cosa chiedere e adatta il risultato al destinatario e allo scopo.",
+            "4": "Specifica formato, destinatario e criteri dell'output; integra i risultati con priorità proprie.",
+            "5": "Come 4, e rende esplicito cosa viene dall'IA e cosa dal proprio giudizio, con raccomandazioni motivate."
+          },
+          "provvisorio": true
+        }
+      ]
+    },
+    {
+      "id": "problem-solving",
+      "nome": "Problem solving",
+      "tipoSkill": "soft",
+      "provvisorio": true,
+      "declaratoria": "Capacità di analizzare un problema con informazioni incomplete, individuarne le cause plausibili e proporre soluzioni concrete e verificabili.",
+      "sottoDimensioni": [
+        {
+          "id": "ps-analisi-dati",
+          "nome": "Lettura e analisi dei dati",
+          "declaratoria": "Capacità di leggere correttamente dati e indicatori, individuare trend e anomalie e distinguere correlazione da causa.",
+          "griglia": {"1": "Conclusioni non supportate dai dati; errori di lettura.", "2": "Descrive i numeri senza interpretarli.", "3": "Legge correttamente i trend principali.", "4": "Distingue correlazione e causa; individua i dati mancanti.", "5": "Come 4, e indica come verificare le ipotesi e misurare gli effetti."},
+          "provvisorio": true
+        },
+        {
+          "id": "ps-ipotesi-soluzioni",
+          "nome": "Formulazione di ipotesi e soluzioni",
+          "declaratoria": "Capacità di formulare ipotesi plausibili e tradurle in azioni concrete con responsabili e indicatori.",
+          "griglia": {"1": "Nessuna ipotesi o soluzione concreta.", "2": "Ipotesi generiche, azioni vaghe.", "3": "Ipotesi plausibili e azioni ragionevoli.", "4": "Azioni con owner e KPI, coerenti con le ipotesi.", "5": "Come 4, con priorità motivate e piano di verifica."},
+          "provvisorio": true
+        },
+        {
+          "id": "ps-integrazione-informazioni",
+          "nome": "Integrazione delle informazioni",
+          "declaratoria": "Capacità di collegare informazioni distribuite su più fonti e notare contraddizioni tra esse.",
+          "griglia": {"1": "Tratta ogni informazione in modo isolato.", "2": "Collega solo informazioni vicine ed evidenti.", "3": "Integra le informazioni principali.", "4": "Rileva contraddizioni tra fonti e ne tiene conto.", "5": "Come 4, e usa le contraddizioni per riformulare il problema."},
+          "provvisorio": true
+        }
+      ]
+    },
+    {
+      "id": "time-management",
+      "nome": "Time management",
+      "tipoSkill": "soft",
+      "provvisorio": true,
+      "declaratoria": "Capacità di organizzare il proprio tempo e le priorità in presenza di richieste concorrenti e scadenze.",
+      "sottoDimensioni": [
+        {
+          "id": "tm-prioritizzazione",
+          "nome": "Prioritizzazione",
+          "declaratoria": "Capacità di ordinare le attività per urgenza e impatto, esplicitando cosa non si fa e perché.",
+          "griglia": {"1": "Risponde in ordine di arrivo; scadenze mancate.", "2": "Elenca le richieste senza criterio.", "3": "Ordina per urgenza in modo realistico.", "4": "Ordina per urgenza e impatto ed esplicita i trade-off.", "5": "Come 4, con delega ed escalation motivate."},
+          "provvisorio": true
+        },
+        {
+          "id": "tm-delega-escalation",
+          "nome": "Delega ed escalation",
+          "declaratoria": "Capacità di riconoscere cosa delegare, a chi e cosa portare all'attenzione di un livello superiore.",
+          "griglia": {"1": "Fa tutto da solo o scarica tutto.", "2": "Delega senza criterio.", "3": "Delega le attività adatte.", "4": "Delega ed escala in modo motivato.", "5": "Come 4, con istruzioni chiare e verifica dei risultati."},
+          "provvisorio": true
+        },
+        {
+          "id": "tm-pianificazione",
+          "nome": "Pianificazione",
+          "declaratoria": "Capacità di costruire un piano realistico che rispetta vincoli e impegni già fissati.",
+          "griglia": {"1": "Nessun piano.", "2": "Piano irrealistico o incompleto.", "3": "Piano realistico con le scadenze principali.", "4": "Piano che gestisce sovrapposizioni e vincoli.", "5": "Come 4, e anticipa rischi e margini."},
+          "provvisorio": true
+        }
+      ]
+    },
+    {
+      "id": "pensiero-critico",
+      "nome": "Pensiero critico",
+      "tipoSkill": "soft",
+      "provvisorio": true,
+      "declaratoria": "Capacità di valutare informazioni e argomentazioni senza accettarle passivamente, verificandone fondatezza e coerenza.",
+      "sottoDimensioni": [
+        {
+          "id": "pc-verifica-fonti",
+          "nome": "Verifica delle fonti",
+          "declaratoria": "Capacità di verificare l'affidabilità di fonti e dati prima di usarli, anche se presentati con autorevolezza.",
+          "griglia": {"1": "Accetta tutto come vero.", "2": "Verifica solo se sollecitato.", "3": "Verifica le informazioni principali.", "4": "Verifica sistematicamente, anche le fonti autorevoli.", "5": "Come 4, e documenta cosa ha verificato e con quale esito."},
+          "provvisorio": true
+        },
+        {
+          "id": "pc-rilevazione-incongruenze",
+          "nome": "Rilevazione di incongruenze",
+          "declaratoria": "Capacità di notare errori, contraddizioni e affermazioni non supportate.",
+          "griglia": {"1": "Non rileva errori.", "2": "Rileva solo errori evidenti.", "3": "Rileva le incongruenze principali.", "4": "Rileva anche incongruenze sottili e ne valuta l'impatto.", "5": "Come 4, e corregge il ragionamento di conseguenza."},
+          "provvisorio": true
+        },
+        {
+          "id": "pc-giudizio-autonomo",
+          "nome": "Giudizio autonomo",
+          "declaratoria": "Capacità di prendere posizione in modo motivato, anche contro pressioni o opinioni prevalenti.",
+          "griglia": {"1": "Si adegua alle pressioni.", "2": "Prende posizione in modo debole.", "3": "Prende posizione motivata.", "4": "Sostiene la posizione con argomenti e alternative.", "5": "Come 4, gestendo il disaccordo in modo costruttivo."},
+          "provvisorio": true
+        }
+      ]
+    },
+    {
+      "id": "apprendimento-continuo",
+      "nome": "Apprendimento continuo",
+      "tipoSkill": "soft",
+      "provvisorio": true,
+      "declaratoria": "Capacità di adattarsi a strumenti, processi e situazioni nuove, imparando dall'esperienza.",
+      "sottoDimensioni": [
+        {
+          "id": "ac-adattamento",
+          "nome": "Adattamento al cambiamento",
+          "declaratoria": "Capacità di affrontare nuovi strumenti o processi in modo costruttivo, gestendo le resistenze proprie e altrui.",
+          "griglia": {"1": "Rifiuta o ignora il cambiamento.", "2": "Lo accetta passivamente.", "3": "Lo affronta con un piano essenziale.", "4": "Coinvolge gli altri e gestisce le resistenze.", "5": "Come 4, con sperimentazione e misura dei risultati."},
+          "provvisorio": true
+        },
+        {
+          "id": "ac-riflessione",
+          "nome": "Riflessione sull'esperienza",
+          "declaratoria": "Capacità di riconoscere cosa ha funzionato e cosa no e di trarne indicazioni per il futuro.",
+          "griglia": {"1": "Nessuna riflessione.", "2": "Riflessione generica.", "3": "Individua cosa migliorare.", "4": "Individua cause e azioni di miglioramento.", "5": "Come 4, e le trasforma in pratiche condivise."},
+          "provvisorio": true
+        }
+      ]
+    },
+    {
+      "id": "comunicazione-relazione",
+      "nome": "Comunicazione e relazione",
+      "tipoSkill": "soft",
+      "provvisorio": true,
+      "declaratoria": "Capacità di comunicare in modo chiaro ed efficace e di gestire relazioni con interlocutori diversi, anche in situazioni delicate o di conflitto.",
+      "sottoDimensioni": [
+        {
+          "id": "cr-registro",
+          "nome": "Adattamento del registro",
+          "declaratoria": "Capacità di adattare tono, linguaggio e struttura del messaggio all'interlocutore e alla situazione.",
+          "griglia": {"1": "Tono inadeguato o difensivo.", "2": "Corretto ma rigido.", "3": "Tono adeguato all'interlocutore.", "4": "Fermo e collaborativo; registro adattato.", "5": "Come 4, e capace di influenzare chi è contrario."},
+          "provvisorio": true
+        },
+        {
+          "id": "cr-situazioni-delicate",
+          "nome": "Gestione di situazioni delicate",
+          "declaratoria": "Capacità di gestire casi personali o conflittuali con equilibrio, tutelando persone e riservatezza.",
+          "griglia": {"1": "Ignora la dimensione personale o viola la riservatezza.", "2": "Gestione formale senza ascolto.", "3": "Riconosce la persona e tutela la riservatezza.", "4": "Equilibra le parti e coinvolge le figure giuste.", "5": "Come 4, e interviene sulle cause organizzative."},
+          "provvisorio": true
+        },
+        {
+          "id": "cr-feedback-sviluppo",
+          "nome": "Feedback e sviluppo degli altri",
+          "declaratoria": "Capacità di dare feedback specifici e costruttivi che aiutano gli altri a crescere.",
+          "griglia": {"1": "Feedback assente o ostile.", "2": "Feedback generico.", "3": "Feedback specifico.", "4": "Feedback che attiva il collega con proposte concrete.", "5": "Come 4, e sviluppa autonomia e pratiche condivise."},
+          "provvisorio": true
+        }
+      ]
+    }
+  ]
+}

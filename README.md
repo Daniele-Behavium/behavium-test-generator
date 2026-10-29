@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Behavium · Generatore test
 
-## Getting Started
+Web app interna che genera test **in-basket** e **situazionali** a partire da job title e job description, usando Claude (via OpenRouter). Il test viene salvato come bozza, rivisto dal team e poi esportato per Strapi.
 
-First, run the development server:
+## Come funziona
+
+1. **Analisi della JD**: Claude propone seniority, durata, dimensioni e sotto-dimensioni del catalogo (con pesi e motivazioni). Rispetta il campo "focus" e le esclusioni.
+2. **Revisione**: chi usa il tool corregge selezione, pesi, seniority e durata.
+3. **Piano**: Claude progetta scenario e piano di email/domande. Il codice verifica le regole fisse del framework (`src/lib/regole.ts`) e, se servono correzioni, fa rigenerare il piano.
+4. **Contenuti**: email o domande generate a lotti in parallelo, poi controllate. Gli elementi con errori vengono corretti automaticamente una volta.
+5. **Revisione e feedback**: ogni elemento mostra quali sotto-dimensioni testa e perché. Si lascia un feedback per elemento o sul test intero, e si può rigenerare un singolo elemento.
+
+## Come impara
+
+- **Regole apprese**: dalla pagina "Regole apprese" Claude trasforma i commenti dei feedback in regole generali. Le regole approvate entrano in tutte le generazioni successive.
+- **Esempi**: i test con stato "approvato" diventano esempi di riferimento per i test dello stesso tipo.
+
+## File importanti
+
+| File | Cosa contiene |
+|---|---|
+| `src/catalog/dimensioni.json` | Catalogo dimensioni e sotto-dimensioni con declaratorie e griglie 1-5. **Provvisorio**: va sostituito con quello definitivo mantenendo la struttura. |
+| `src/lib/regole.ts` | Regole fisse del framework (numero email, categorie obbligatorie, critiche, trappole...). |
+| `src/lib/prompts.ts` | Prompt di Claude. |
+| `src/lib/strapi-export.ts` | Conversione nel formato Strapi. **Nomi dei campi da allineare** agli `schema.json` reali. |
+| `supabase/schema.sql` | Tabelle del database. |
+
+## Setup
+
+1. **Supabase**: crea un progetto ed esegui `supabase/schema.sql` nel SQL Editor.
+2. **Vercel**: importa il repository e imposta le variabili d'ambiente:
+
+| Variabile | Valore |
+|---|---|
+| `OPENROUTER_API_KEY` | Chiave OpenRouter |
+| `OPENROUTER_MODEL` | Facoltativa, default `anthropic/claude-opus-5.5` |
+| `SUPABASE_URL` | Project URL di Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key di Supabase (resta sul server) |
+| `APP_PASSWORD` | Password condivisa per accedere al tool |
+
+3. Le funzioni di generazione durano fino a qualche minuto: in Vercel serve che la durata massima delle funzioni sia almeno 300 secondi (impostata nel codice con `maxDuration`).
+
+## Sviluppo locale
 
 ```bash
+npm install
+cp .env.example .env.local   # e compila le variabili
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Senza variabili Supabase, in locale i dati finiscono nel file `.dev-db.json`.
