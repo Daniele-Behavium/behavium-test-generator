@@ -18,12 +18,16 @@ export async function chiamaAI<T>(opts: {
   schema: Record<string, unknown>;
   maxTokens?: number;
   temperature?: number;
+  tentativi?: number;
+  /** Token di ragionamento concessi al modello prima della risposta (si sommano a maxTokens). */
+  ragionamento?: number;
 }): Promise<RisultatoAI<T>> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY non configurata");
 
   let ultimoErrore: unknown;
-  for (let tentativo = 0; tentativo < 2; tentativo++) {
+  let costoAccumulato = 0;
+  for (let tentativo = 0; tentativo < (opts.tentativi ?? 2); tentativo++) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -34,8 +38,9 @@ export async function chiamaAI<T>(opts: {
       },
       body: JSON.stringify({
         model: MODELLO,
-        max_tokens: opts.maxTokens ?? 16000,
-        temperature: opts.temperature ?? 0.7,
+        max_tokens: (opts.maxTokens ?? 16000) + (opts.ragionamento ?? 3000),
+        reasoning: opts.ragionamento === 0 ? { enabled: false } : { max_tokens: opts.ragionamento ?? 3000 },
+        ...(opts.ragionamento === 0 ? { temperature: opts.temperature ?? 0.7 } : {}), // con il ragionamento attivo Anthropic accetta solo la temperatura di default
         usage: { include: true },
         messages: [
           { role: "system", content: opts.system },
@@ -54,11 +59,14 @@ export async function chiamaAI<T>(opts: {
       throw ultimoErrore;
     }
     const testo: string = body?.choices?.[0]?.message?.content ?? "";
+    const fine = body?.choices?.[0]?.finish_reason;
+    costoAccumulato += Number(body?.usage?.cost ?? 0);
     try {
       const dati = JSON.parse(estraiJson(testo)) as T;
-      return { dati, costo: Number(body?.usage?.cost ?? 0), modello: body?.model ?? MODELLO };
+      return { dati, costo: costoAccumulato, modello: body?.model ?? MODELLO };
     } catch (e) {
-      ultimoErrore = new Error(`Risposta AI non valida (JSON): ${String(e)} :: ${testo.slice(0, 300)}`);
+      console.error(`[AI] JSON non valido (${opts.schemaName}) finish=${fine} native=${body?.choices?.[0]?.native_finish_reason} usage=${JSON.stringify(body?.usage)} len=${testo.length}`);
+      ultimoErrore = new Error(`Risposta AI non valida (JSON, fine: ${fine}): ${String(e)}`);
     }
   }
   throw ultimoErrore;

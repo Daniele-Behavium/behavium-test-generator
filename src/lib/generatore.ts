@@ -20,7 +20,7 @@ export async function analizza(input: InputTest) {
     schemaName: "analisi",
     schema: schemaAnalisi,
     maxTokens: 6000,
-    temperature: 0.3,
+    ragionamento: 2000,
   });
   const a = r.dati;
   // Pulizia: tieni solo id validi e coerenti con il catalogo.
@@ -32,29 +32,23 @@ export async function analizza(input: InputTest) {
 }
 
 // ---------- Fase 2 ----------
-export async function pianifica(input: InputTest, analisi: Analisi) {
+// Una sola chiamata AI per richiesta (per restare nei limiti di durata delle funzioni su Vercel):
+// se il piano viola le regole, è il client a richiamare passando gli errori da correggere.
+export async function pianifica(input: InputTest, analisi: Analisi, errori?: string) {
   const system = await systemCompleto(input.tipo, true);
   const durata = input.durata ?? analisi.durata;
-  let costo = 0;
-  let errori = "";
-  let scenario: Scenario | null = null;
-  let problemi: Problema[] = [];
-  for (let tentativo = 0; tentativo < 2; tentativo++) {
-    const r = await chiamaAI<Scenario>({
-      system,
-      user: promptScenario(input, analisi, errori || undefined),
-      schemaName: "scenario",
-      schema: schemaScenario,
-      maxTokens: 12000,
-    });
-    costo += r.costo;
-    scenario = normalizzaPiano(input, r.dati);
-    problemi = validaPiano(input.tipo, durata, scenario, analisi.selezione);
-    const err = problemi.filter((p) => p.livello === "errore");
-    if (!err.length) break;
-    errori = err.map((p) => `- ${p.ref ? p.ref + ": " : ""}${p.messaggio}`).join("\n");
-  }
-  return { scenario: scenario!, problemi, costo };
+  const r = await chiamaAI<Scenario>({
+    system,
+    user: promptScenario(input, analisi, errori || undefined),
+    schemaName: "scenario",
+    schema: schemaScenario,
+    maxTokens: 16000,
+    ragionamento: 4000,
+    tentativi: 1,
+  });
+  const scenario = normalizzaPiano(input, r.dati);
+  const problemi: Problema[] = validaPiano(input.tipo, durata, scenario, analisi.selezione);
+  return { scenario, problemi, costo: r.costo };
 }
 
 function normalizzaPiano(input: InputTest, s: Scenario): Scenario {

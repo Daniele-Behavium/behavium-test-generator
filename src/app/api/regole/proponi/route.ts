@@ -33,7 +33,7 @@ export const POST = gestisci(async () => {
     schemaName: "regole",
     schema: schemaRegoleProposte,
     maxTokens: 4000,
-    temperature: 0.2,
+    ragionamento: 1500,
   });
   const autore = await nomeUtente();
   await aggiungiRegole(r.dati.regole.map((x) => ({ testo: x.testo, ambito: x.ambito, stato: "proposta" as const, origine: x.feedbackIds.join(","), autore })));

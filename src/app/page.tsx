@@ -81,9 +81,24 @@ export default function NuovoTest() {
     setFasi([{ id: "piano", label: "Scenario e piano degli elementi", stato: "in_corso" }]);
     try {
       // 1. Piano
-      const p = await api<{ scenario: Scenario; problemi: Problema[]; costo: number }>("/api/genera/piano", { input, analisi: an });
+      type RispPiano = { scenario: Scenario; problemi: Problema[]; costo: number };
+      const chiediPiano = async (errori?: string): Promise<RispPiano> => {
+        try {
+          return await api<RispPiano>("/api/genera/piano", { input, analisi: an, errori });
+        } catch {
+          aggiorna("piano", { dettaglio: "risposta incompleta, riprovo…" });
+          return api<RispPiano>("/api/genera/piano", { input, analisi: an, errori });
+        }
+      };
+      let p = await chiediPiano();
       tot += p.costo;
-      const errPiano = p.problemi.filter((x) => x.livello === "errore");
+      let errPiano = p.problemi.filter((x) => x.livello === "errore");
+      if (errPiano.length) {
+        aggiorna("piano", { dettaglio: `${errPiano.length} regole non rispettate, correggo il piano…` });
+        p = await chiediPiano(errPiano.map((x) => `- ${x.ref ? x.ref + ": " : ""}${x.messaggio}`).join("\n"));
+        tot += p.costo;
+        errPiano = p.problemi.filter((x) => x.livello === "errore");
+      }
       aggiorna("piano", { stato: "ok", dettaglio: `${p.scenario.piano.length} elementi · ${p.scenario.settoreScenario}${errPiano.length ? ` · ${errPiano.length} problemi residui` : ""}` });
 
       // 2. Elementi a lotti, in parallelo
