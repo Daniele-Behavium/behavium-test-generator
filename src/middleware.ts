@@ -3,7 +3,14 @@ import { COOKIE_AUTH, hashPassword } from "@/lib/auth";
 
 export async function middleware(req: NextRequest) {
   const pw = process.env.APP_PASSWORD;
-  if (!pw) return NextResponse.next(); // nessuna password impostata (solo sviluppo)
+  if (!pw) {
+    // In locale si lavora senza password; online, senza APP_PASSWORD, il tool resta chiuso.
+    if (process.env.NODE_ENV !== "production" || process.env.ALLOW_NO_PASSWORD === "1") return NextResponse.next();
+    return new NextResponse("Configurazione incompleta: imposta APP_PASSWORD (e le altre variabili) nelle impostazioni del progetto Vercel, poi fai Redeploy.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
   const { pathname } = req.nextUrl;
   if (pathname.startsWith("/login") || pathname.startsWith("/api/login")) return NextResponse.next();
   const cookie = req.cookies.get(COOKIE_AUTH)?.value;
