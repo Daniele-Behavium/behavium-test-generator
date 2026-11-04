@@ -28,8 +28,20 @@ export function catalogoPerPrompt(soloSub?: string[]): string {
             (["1", "2", "3", "4", "5"] as const).map((k) => `${k}=${s.griglia[k]}`).join(" | ")
         )
         .join("\n");
-      return `DIMENSIONE [${d.id}] ${d.nome} (${d.tipoSkill === "ai" ? "AI skill" : "Soft skill"}): ${d.declaratoria}\n${righe}`;
+      return `DIMENSIONE [${d.id}] ${d.nome} (gruppo: ${d.gruppo ?? "-"}; ${d.tipoSkill === "ai" ? "AI skill" : "Soft skill"}): ${d.declaratoria}\n${righe}`;
     })
     .filter(Boolean)
     .join("\n\n");
+}
+
+/** Dimensioni raggruppate per gruppo, nell'ordine del catalogo. */
+export function perGruppo(): { gruppo: string; dimensioni: Dimensione[] }[] {
+  const out: { gruppo: string; dimensioni: Dimensione[] }[] = [];
+  for (const d of catalogo.dimensioni) {
+    const g = d.gruppo ?? "Altro";
+    let blocco = out.find((x) => x.gruppo === g);
+    if (!blocco) out.push((blocco = { gruppo: g, dimensioni: [] }));
+    blocco.dimensioni.push(d);
+  }
+  return out;
 }

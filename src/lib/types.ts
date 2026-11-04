@@ -18,6 +18,7 @@ export interface Dimensione {
   id: string;
   nome: string;
   tipoSkill: "soft" | "ai";
+  gruppo?: string;
   declaratoria: string;
   sottoDimensioni: SottoDimensione[];
   provvisorio?: boolean;

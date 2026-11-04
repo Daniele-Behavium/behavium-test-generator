@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Analisi, DomandaGenerata, EmailGenerata, InputTest, Problema, Scenario, SelezioneDimensione, Seniority } from "@/lib/types";
-import { catalogo } from "@/lib/catalog";
+import { perGruppo } from "@/lib/catalog";
 import { assembla } from "@/lib/assembla";
 import { validaTest } from "@/lib/regole";
 import { Segmented, Badge, api, euro } from "@/components/ui";
@@ -352,7 +352,11 @@ function Revisione({
             </span>
           </div>
           <ul className="divide-y divide-n-50">
-            {catalogo.dimensioni.map((d) => {
+            {perGruppo().flatMap((g) => [
+              <li key={`g-${g.gruppo}`} className="bg-n-25 px-5 py-2">
+                <span className="eyebrow">{g.gruppo}</span>
+              </li>,
+              ...g.dimensioni.map((d) => {
               const sel = selezione.find((x) => x.dimensioneId === d.id);
               return (
                 <li key={d.id} className={`px-5 py-4 ${sel ? "" : "opacity-70"}`}>
@@ -389,7 +393,8 @@ function Revisione({
                   )}
                 </li>
               );
-            })}
+              }),
+            ])}
           </ul>
         </div>
       </div>

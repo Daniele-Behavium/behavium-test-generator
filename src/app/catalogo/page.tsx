@@ -1,4 +1,4 @@
-import { catalogo } from "@/lib/catalog";
+import { catalogo, perGruppo } from "@/lib/catalog";
 
 export default function Catalogo() {
   return (
@@ -6,8 +6,13 @@ export default function Catalogo() {
       <p className="eyebrow">Catalogo · versione {catalogo.versione}</p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">Dimensioni e sotto-dimensioni</h1>
       {catalogo.note && <p className="mt-3 rounded-[4px] border border-warn/30 bg-warn-50 px-4 py-3 text-sm text-n-800">{catalogo.note}</p>}
-      <div className="mt-6 space-y-6">
-        {catalogo.dimensioni.map((d) => (
+      <p className="mt-2 font-mono text-xs text-n-400">
+        {catalogo.dimensioni.length} dimensioni · {catalogo.dimensioni.reduce((a, d) => a + d.sottoDimensioni.length, 0)} sotto-dimensioni
+      </p>
+      {perGruppo().map((g) => (
+      <div key={g.gruppo} className="mt-8 space-y-6">
+        <h2 className="eyebrow">{g.gruppo}</h2>
+        {g.dimensioni.map((d) => (
           <section key={d.id} className="card">
             <div className="border-b border-n-50 px-5 py-4">
               <div className="flex items-center gap-2">
@@ -39,6 +44,7 @@ export default function Catalogo() {
           </section>
         ))}
       </div>
+      ))}
     </div>
   );
 }
