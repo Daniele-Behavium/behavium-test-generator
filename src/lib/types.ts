@@ -177,7 +177,8 @@ export interface RecordTest {
   test: TestGenerato;
   problemi: Problema[];
   modello: string;
-  costo: number;
+  costo: number; // costo della generazione (dollari, da OpenRouter)
+  costo_modifiche?: number; // costo cumulato delle rigenerazioni successive
   catalogo_versione: string;
 }
 

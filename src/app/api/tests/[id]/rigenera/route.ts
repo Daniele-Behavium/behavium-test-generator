@@ -65,6 +65,12 @@ export const POST = gestisci(async (req: Request, ctx: Ctx) => {
       domande: b.domande.map((d) => (d.ref === ref ? { ...(nuovo as DomandaGenerata), blocco: b.titolo } : d)),
     }));
   const problemi = validaTest(t);
-  await aggiornaTest(id, { test: t, problemi, costo: Number(rec.costo) + costo });
+  try {
+    await aggiornaTest(id, { test: t, problemi, costo_modifiche: Number(rec.costo_modifiche ?? 0) + costo });
+  } catch (e) {
+    // database senza la colonna costo_modifiche: il costo si somma a quello totale
+    if (!String(e).includes("costo_modifiche")) throw e;
+    await aggiornaTest(id, { test: t, problemi, costo: Number(rec.costo) + costo });
+  }
   return { item: nuovo, problemi };
 });

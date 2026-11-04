@@ -41,3 +41,6 @@ create table if not exists regole (
 alter table tests enable row level security;
 alter table feedback enable row level security;
 alter table regole enable row level security;
+
+-- 2026-11-04: costo delle rigenerazioni separato da quello della generazione
+alter table tests add column if not exists costo_modifiche numeric not null default 0;

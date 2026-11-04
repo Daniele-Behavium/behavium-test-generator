@@ -52,13 +52,19 @@ export async function getTest(id: string): Promise<RecordTest | null> {
   return (await leggiDev()).tests.find((t) => t.id === id) ?? null;
 }
 
-export async function listaTest(): Promise<Pick<RecordTest, "id" | "created_at" | "autore" | "stato" | "input" | "costo">[]> {
+export async function listaTest(): Promise<Pick<RecordTest, "id" | "created_at" | "autore" | "stato" | "input" | "costo" | "costo_modifiche">[]> {
   const s = supabase();
-  if (s) return ok(await s.from("tests").select("id,created_at,autore,stato,input,costo").order("created_at", { ascending: false }).limit(200));
+  if (s) {
+    const r = await s.from("tests").select("id,created_at,autore,stato,input,costo,costo_modifiche").order("created_at", { ascending: false }).limit(200);
+    // database senza la colonna costo_modifiche (migrazione non ancora eseguita)
+    if (r.error && r.error.message.includes("costo_modifiche"))
+      return ok(await s.from("tests").select("id,created_at,autore,stato,input,costo").order("created_at", { ascending: false }).limit(200));
+    return ok(r);
+  }
   return (await leggiDev()).tests;
 }
 
-export async function aggiornaTest(id: string, patch: Partial<Pick<RecordTest, "stato" | "test" | "problemi" | "costo">>) {
+export async function aggiornaTest(id: string, patch: Partial<Pick<RecordTest, "stato" | "test" | "problemi" | "costo" | "costo_modifiche">>) {
   const s = supabase();
   if (s) {
     ok(await s.from("tests").update(patch).eq("id", id));

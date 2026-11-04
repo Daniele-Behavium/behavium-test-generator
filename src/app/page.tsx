@@ -6,6 +6,7 @@ import { perGruppo } from "@/lib/catalog";
 import { assembla } from "@/lib/assembla";
 import { validaTest } from "@/lib/regole";
 import { Segmented, Badge, api, euro } from "@/components/ui";
+import { Loader, Progresso, type Fase } from "@/components/Attesa";
 
 const VUOTO: InputTest = {
   jobTitle: "",
@@ -20,7 +21,6 @@ const VUOTO: InputTest = {
 const BOZZA = "bh-tg-bozza";
 
 type Item = EmailGenerata | DomandaGenerata;
-type Fase = { id: string; label: string; stato: "attesa" | "in_corso" | "ok" | "errore"; dettaglio?: string };
 
 export default function NuovoTest() {
   const router = useRouter();
@@ -33,6 +33,8 @@ export default function NuovoTest() {
   const [fasi, setFasi] = useState<Fase[]>([]);
   const [costo, setCosto] = useState(0);
   const [modello, setModello] = useState("");
+  const [inizioAttesa, setInizioAttesa] = useState(0);
+  const [finito, setFinito] = useState(false);
 
   useEffect(() => {
     try {
@@ -52,6 +54,7 @@ export default function NuovoTest() {
     setErrore("");
     if (!input.jobTitle.trim() || !input.jd.trim()) return setErrore("Job title e JD sono obbligatori.");
     setCaricamento(true);
+    setInizioAttesa(Date.now());
     try {
       const r = await api<{ analisi: Analisi; costo: number; modello: string }>("/api/genera/analisi", { input: { ...input, seniority: undefined, durata: undefined } });
       setAnalisi(r.analisi);
@@ -77,8 +80,12 @@ export default function NuovoTest() {
     const an: Analisi = { ...analisi, selezione, seniority: input.seniority!, durata: input.durata! };
     setStep(3);
     let tot = costo;
-    const aggiorna = (id: string, patch: Partial<Fase>) => setFasi((fs) => fs.map((f) => (f.id === id ? { ...f, ...patch } : f)));
-    setFasi([{ id: "piano", label: "Scenario e piano degli elementi", stato: "in_corso" }]);
+    const aggiorna = (id: string, patch: Partial<Fase>) =>
+      setFasi((fs) => fs.map((f) => (f.id === id ? { ...f, ...patch, ...(patch.stato === "in_corso" && !f.inizio ? { inizio: Date.now() } : {}) } : f)));
+    setInizioAttesa(Date.now());
+    setFinito(false);
+    // pesi della barra: piano 30%, contenuti 55%, controllo 10%, salvataggio 5%
+    setFasi([{ id: "piano", label: "Scenario e piano degli elementi", stato: "in_corso", inizio: Date.now(), peso: 30, attesi: 150 }]);
     try {
       // 1. Piano
       type RispPiano = { scenario: Scenario; problemi: Problema[]; costo: number };
@@ -108,9 +115,15 @@ export default function NuovoTest() {
       for (let i = 0; i < refs.length; i += dim) lotti.push(refs.slice(i, i + dim));
       setFasi((fs) => [
         ...fs,
-        ...lotti.map((l, i) => ({ id: `lotto${i}`, label: `${input.tipo === "inBasket" ? "Email" : "Domande"} ${l[0]}-${l[l.length - 1]}`, stato: "attesa" as const })),
-        { id: "controllo", label: "Controllo regole e correzioni", stato: "attesa" },
-        { id: "salva", label: "Salvataggio", stato: "attesa" },
+        ...lotti.map((l, i) => ({
+          id: `lotto${i}`,
+          label: `${input.tipo === "inBasket" ? "Email" : "Domande"} ${l[0]}-${l[l.length - 1]}`,
+          stato: "attesa" as const,
+          peso: 55 / lotti.length,
+          attesi: 100,
+        })),
+        { id: "controllo", label: "Controllo regole e correzioni", stato: "attesa" as const, peso: 10, attesi: 40 },
+        { id: "salva", label: "Salvataggio", stato: "attesa" as const, peso: 5, attesi: 3 },
       ]);
       const items: Item[] = [];
       const eseguiLotto = async (l: string[], i: number) => {
@@ -163,6 +176,7 @@ export default function NuovoTest() {
       aggiorna("salva", { stato: "in_corso" });
       const s = await api<{ id: string }>("/api/tests", { input, analisi: an, scenario: p.scenario, items, modello, costo: tot });
       aggiorna("salva", { stato: "ok" });
+      setFinito(true);
       setCosto(tot);
       try {
         localStorage.removeItem(BOZZA);
@@ -233,9 +247,13 @@ export default function NuovoTest() {
               </div>
             </div>
             <p className="text-xs leading-relaxed text-n-400">Seniority e durata le propone l&apos;AI leggendo la JD; le correggi al passo successivo.</p>
-            <button className="btn-primary w-full" onClick={analizza} disabled={caricamento}>
-              {caricamento ? "Analisi della JD in corso…" : "Analizza la JD"}
-            </button>
+            {caricamento ? (
+              <Loader messaggio="Analisi della JD in corso" stima="Di solito ci vogliono 30-40 secondi." inizio={inizioAttesa} />
+            ) : (
+              <button className="btn-primary w-full" onClick={analizza}>
+                Analizza la JD
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -254,7 +272,8 @@ export default function NuovoTest() {
 
       {step === 3 && (
         <div className="card max-w-xl p-6">
-          <ul className="space-y-3">
+          <Progresso fasi={fasi} inizio={inizioAttesa} finito={finito} />
+          <ul className="mt-6 space-y-3">
             {fasi.map((f) => (
               <li key={f.id} className="flex items-start gap-3 text-sm">
                 <span className="mt-1.5 grid h-2.5 w-2.5 shrink-0 place-items-center">
@@ -269,7 +288,7 @@ export default function NuovoTest() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-xs text-n-400">Ci vogliono alcuni minuti. Puoi lasciare la pagina aperta e fare altro.</p>
+          <p className="mt-6 text-xs text-n-400">Di solito ci vogliono 5-8 minuti. Lascia questa pagina aperta: puoi lavorare in un&apos;altra scheda.</p>
           {errore && (
             <button className="btn-ghost mt-4" onClick={() => setStep(2)}>
               Torna alla revisione

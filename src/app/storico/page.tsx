@@ -4,7 +4,8 @@ import Link from "next/link";
 import type { RecordTest } from "@/lib/types";
 import { Badge, api, euro } from "@/components/ui";
 
-type Riga = Pick<RecordTest, "id" | "created_at" | "autore" | "stato" | "input" | "costo">;
+type Riga = Pick<RecordTest, "id" | "created_at" | "autore" | "stato" | "input" | "costo" | "costo_modifiche">;
+const costoTot = (r: Riga) => Number(r.costo || 0) + Number(r.costo_modifiche || 0);
 
 export default function Storico() {
   const [righe, setRighe] = useState<Riga[] | null>(null);
@@ -13,7 +14,7 @@ export default function Storico() {
     api<Riga[]>("/api/tests").then(setRighe).catch((e) => setErrore(e.message));
   }, []);
 
-  const totale = (righe ?? []).reduce((a, r) => a + Number(r.costo || 0), 0);
+  const totale = (righe ?? []).reduce((a, r) => a + costoTot(r), 0);
 
   return (
     <div>
@@ -40,6 +41,7 @@ export default function Storico() {
                 <th className="px-4 py-2 font-medium">Tipo</th>
                 <th className="hidden px-4 py-2 font-medium md:table-cell">Autore</th>
                 <th className="hidden px-4 py-2 font-medium md:table-cell">Data</th>
+                <th className="px-4 py-2 text-right font-medium">Costo</th>
                 <th className="px-4 py-2 font-medium">Stato</th>
               </tr>
             </thead>
@@ -57,6 +59,9 @@ export default function Storico() {
                   <td className="px-4 py-2.5">{r.input.tipo === "inBasket" ? "In-basket" : "Situazionale"}</td>
                   <td className="hidden px-4 py-2.5 text-n-600 md:table-cell">{r.autore}</td>
                   <td className="hidden px-4 py-2.5 font-mono text-xs text-n-400 md:table-cell">{new Date(r.created_at).toLocaleDateString("it-IT")}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-xs" title={`generazione ${euro(r.costo)} · modifiche ${euro(r.costo_modifiche ?? 0)}`}>
+                    {euro(costoTot(r))}
+                  </td>
                   <td className="px-4 py-2.5">
                     <Badge tono={r.stato === "approvato" ? "ok" : r.stato === "scartato" ? "err" : "warn"}>{r.stato}</Badge>
                   </td>

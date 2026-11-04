@@ -106,3 +106,12 @@ body {
     @apply font-semibold text-n-900;
   }
 }
+
+@keyframes scorri {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

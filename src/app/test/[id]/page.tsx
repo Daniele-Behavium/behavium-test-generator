@@ -74,6 +74,7 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
             <Badge>{t.contesto}</Badge>
             <Badge>{t.lingua.toUpperCase()}</Badge>
             <Badge>scenario: {t.settoreScenario}</Badge>
+            <Badge tono="dark">{euro(Number(rec.costo) + Number(rec.costo_modifiche ?? 0))}</Badge>
             <Badge tono={rec.stato === "approvato" ? "ok" : rec.stato === "scartato" ? "err" : "warn"}>{rec.stato}</Badge>
           </div>
         </div>
@@ -195,6 +196,17 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
 
         <aside className="space-y-4">
           <div className="card p-5">
+            <p className="eyebrow mb-2">Costo del test</p>
+            <p className="font-mono text-2xl font-medium text-n-900">{euro(Number(rec.costo) + Number(rec.costo_modifiche ?? 0))}</p>
+            <dl className="mt-2 grid grid-cols-[1fr_auto] gap-y-0.5 font-mono text-xs text-n-600">
+              <dt>generazione</dt>
+              <dd className="text-right">{euro(rec.costo)}</dd>
+              <dt>modifiche (rigenerazioni)</dt>
+              <dd className="text-right">{euro(rec.costo_modifiche ?? 0)}</dd>
+            </dl>
+            <p className="hint">Costo reale addebitato da OpenRouter, in dollari.</p>
+          </div>
+          <div className="card p-5">
             <p className="eyebrow mb-3">Dimensioni e pesi</p>
             <ul className="space-y-3">
               {t.dimensioni.map((d) => (
@@ -215,7 +227,6 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
           <FeedbackGlobale testId={id} feedback={fb.filter((f) => !f.item_ref)} ricarica={carica} />
           <div className="font-mono text-[11px] leading-5 text-n-400">
             <p>modello: {rec.modello}</p>
-            <p>costo generazione: {euro(rec.costo)}</p>
             <p>catalogo: {rec.catalogo_versione}</p>
           </div>
         </aside>
