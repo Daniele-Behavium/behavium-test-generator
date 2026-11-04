@@ -1,7 +1,7 @@
 """Converte il markdown della scheda "Declaratorie e griglie" nel catalogo del generatore.
 
 uso: python3 scripts/md-to-catalog.py tassonomia.md src/catalog/dimensioni.json
-
+"""
 import json, re, sys, unicodedata
 
 md, out = sys.argv[1], sys.argv[2]
