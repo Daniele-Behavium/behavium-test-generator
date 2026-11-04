@@ -15,7 +15,8 @@ export const getSottoDimensione = (id: string) => subById.get(id);
 export const dimensioneDi = (subId: string) => subById.get(subId)?.dim.id;
 
 /** Catalogo in formato testo compatto per i prompt. */
-export function catalogoPerPrompt(soloSub?: string[]): string {
+/** Catalogo in testo per i prompt. Senza griglie basta per scegliere cosa misurare e costa meno token. */
+export function catalogoPerPrompt(soloSub?: string[], conGriglie = true): string {
   const filtro = soloSub ? new Set(soloSub) : null;
   return catalogo.dimensioni
     .map((d) => {
@@ -24,8 +25,8 @@ export function catalogoPerPrompt(soloSub?: string[]): string {
       const righe = subs
         .map(
           (s) =>
-            `  - [${s.id}] ${s.nome}: ${s.declaratoria}\n    Griglia: ` +
-            (["1", "2", "3", "4", "5"] as const).map((k) => `${k}=${s.griglia[k]}`).join(" | ")
+            `  - [${s.id}] ${s.nome}: ${s.declaratoria}` +
+            (conGriglie ? `\n    Griglia: ` + (["1", "2", "3", "4", "5"] as const).map((k) => `${k}=${s.griglia[k]}`).join(" | ") : "")
         )
         .join("\n");
       return `DIMENSIONE [${d.id}] ${d.nome} (gruppo: ${d.gruppo ?? "-"}; ${d.tipoSkill === "ai" ? "AI skill" : "Soft skill"}): ${d.declaratoria}\n${righe}`;

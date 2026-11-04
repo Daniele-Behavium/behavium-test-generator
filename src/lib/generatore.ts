@@ -70,6 +70,7 @@ export async function generaItems(input: InputTest, analisi: Analisi, scenario: 
     schemaName: input.tipo === "inBasket" ? "email" : "domande",
     schema: input.tipo === "inBasket" ? schemaEmail : schemaDomande,
     maxTokens: 16000,
+    ragionamento: 1024, // la scrittura segue un piano già deciso: basta poco ragionamento (1024 è il minimo di Anthropic)
   });
   const items = r.dati.items
     .filter((it) => refs.includes(it.ref))

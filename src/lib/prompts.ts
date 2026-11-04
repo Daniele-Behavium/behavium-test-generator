@@ -55,7 +55,7 @@ export function promptAnalisi(i: InputTest): string {
   return `${bloccoInput(i)}
 
 CATALOGO DIMENSIONI E SOTTO-DIMENSIONI (versione ${catalogo.versione}):
-${catalogoPerPrompt()}
+${catalogoPerPrompt(undefined, false)}
 
 COMPITO: analizza la JD e scegli cosa misurare.
 1. Individua le competenze richieste dalla JD, con la fonte testuale.
