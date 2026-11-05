@@ -1,19 +1,27 @@
 "use client";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
-import type { DomandaGenerata, EmailGenerata, Feedback, RecordTest } from "@/lib/types";
+import type { DomandaGenerata, EmailGenerata, Feedback, RecordTest, TestGenerato, TipoTrappola } from "@/lib/types";
 import { getDimensione, getSottoDimensione } from "@/lib/catalog";
 import { versoStrapi } from "@/lib/strapi-export";
-import { Md, SubChip, Badge, api, euro } from "@/components/ui";
+import { domandaVuota, emailVuota, nuovoRef } from "@/lib/modifica-test";
+import { Md, SubChip, Badge, Segmented, api, euro } from "@/components/ui";
+import { BottoneIcona, CATEGORIE as NOMI_CAT, EditorDomanda, EditorEmail, IconaCestino, IconaMatita, SceltaSottoDimensioni, TestoModificabile, TRAPPOLE } from "@/components/Editor";
 
-const NOMI_CAT: Record<string, string> = {
-  strategicDeadline: "Scadenza strategica",
-  urgentOperational: "Urgenza operativa",
-  personalEmotional: "Personale/emotiva",
-  externalComplaint: "Reclamo esterno",
-  numericReport: "Dati/report",
-  agendaOverlap: "Agenda sovrapposta",
-  other: "Altro",
-};
+/** Contesto condiviso dalle schede degli elementi. */
+interface Ctx {
+  testId: string;
+  test: TestGenerato;
+  subDisponibili: string[];
+  personaggi: string[];
+  salvaTest: (t: TestGenerato) => Promise<void>;
+  ricarica: () => void;
+}
+
+/** Sostituisce (o elimina, con null) un elemento del test. */
+function conElemento(t: TestGenerato, ref: string, nuovo: EmailGenerata | DomandaGenerata | null): TestGenerato {
+  if (t.tipo === "inBasket") return { ...t, email: t.email.flatMap((e) => (e.ref !== ref ? [e] : nuovo ? [nuovo as EmailGenerata] : [])) };
+  return { ...t, blocchi: t.blocchi.map((b) => ({ ...b, domande: b.domande.flatMap((d) => (d.ref !== ref ? [d] : nuovo ? [nuovo as DomandaGenerata] : [])) })) };
+}
 
 export default function PaginaTest({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,6 +29,7 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
   const [fb, setFb] = useState<Feedback[]>([]);
   const [errore, setErrore] = useState("");
   const [tab, setTab] = useState<"elementi" | "istruzioni" | "copertura">("elementi");
+  const [word, setWord] = useState(false);
 
   const carica = useCallback(async () => {
     try {
@@ -50,14 +59,37 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
     await api(`/api/tests/${id}`, { stato }, "PATCH");
     carica();
   }
-  function scarica(nome: string, dati: unknown) {
-    const blob = new Blob([JSON.stringify(dati, null, 2)], { type: "application/json" });
+  async function salvaTest(nuovo: TestGenerato) {
+    await api(`/api/tests/${id}`, { test: nuovo }, "PATCH");
+    await carica();
+  }
+  function scaricaBlob(nome: string, blob: Blob) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = nome;
     a.click();
   }
-  const slug = t.nome.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 50);
+  const scarica = (nome: string, dati: unknown) => scaricaBlob(nome, new Blob([JSON.stringify(dati, null, 2)], { type: "application/json" }));
+  async function scaricaWord() {
+    setWord(true);
+    try {
+      const { testInWord } = await import("@/lib/esporta-docx");
+      scaricaBlob(`${slug}.docx`, await testInWord(t));
+    } catch (e) {
+      setErrore("Errore nella creazione del file Word: " + (e as Error).message);
+    } finally {
+      setWord(false);
+    }
+  }
+  const slug = t.nome.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+  const ctx: Ctx = {
+    testId: id,
+    test: t,
+    subDisponibili: t.dimensioni.flatMap((d) => d.sottoDimensioni.map((s) => s.id)),
+    personaggi: t.personaggi.map((p) => p.nome),
+    salvaTest,
+    ricarica: carica,
+  };
 
   return (
     <div>
@@ -66,7 +98,9 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
           <p className="eyebrow">
             {t.tipo === "inBasket" ? "In-basket" : "Situazionale"} · {rec.autore || "anonimo"} · {new Date(rec.created_at).toLocaleString("it-IT")}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t.nome}</h1>
+          <TestoModificabile riga valore={t.nome} onSalva={(nome) => salvaTest({ ...t, nome })}>
+            <h1 className="mt-1 pr-8 text-2xl font-semibold tracking-tight">{t.nome}</h1>
+          </TestoModificabile>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tono="dark">{t.ruoloTarget}</Badge>
             <Badge>{t.seniority}</Badge>
@@ -94,7 +128,10 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
               Riporta in bozza
             </button>
           )}
-          <button className="btn-dark btn-sm" onClick={() => scarica(`${slug}.strapi.json`, versoStrapi(t))} title="Formato per l'import in Strapi, senza sotto-dimensioni e motivazioni">
+          <button className="btn-dark btn-sm" disabled={word} onClick={scaricaWord} title="Documento Word con i campi da caricare a mano in Strapi">
+            {word ? "Preparo…" : "Scarica Word"}
+          </button>
+          <button className="btn-ghost btn-sm" onClick={() => scarica(`${slug}.strapi.json`, versoStrapi(t))} title="Formato per l'import in Strapi, senza sotto-dimensioni e motivazioni">
             JSON per Strapi
           </button>
           <button className="btn-ghost btn-sm" onClick={() => scarica(`${slug}.completo.json`, rec)}>
@@ -157,23 +194,33 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
                     <div key={b.titolo} className="space-y-4">
                       <p className="eyebrow pt-2">Blocco · {b.titolo}</p>
                       {b.domande.map((d) => (
-                        <CardItem key={d.ref} testId={id} item={d} tipo="situational" feedback={fb.filter((f) => f.item_ref === d.ref)} ricarica={carica} />
+                        <CardItem key={d.ref} ctx={ctx} item={d} tipo="situational" feedback={fb.filter((f) => f.item_ref === d.ref)} />
                       ))}
+                      <AggiungiElemento ctx={ctx} blocco={b.titolo} />
                     </div>
                   ))
-                : t.email.map((e) => <CardItem key={e.ref} testId={id} item={e} tipo="inBasket" feedback={fb.filter((f) => f.item_ref === e.ref)} ricarica={carica} />)}
+                : (
+                  <>
+                    {t.email.map((e) => <CardItem key={e.ref} ctx={ctx} item={e} tipo="inBasket" feedback={fb.filter((f) => f.item_ref === e.ref)} />)}
+                    <AggiungiElemento ctx={ctx} />
+                  </>
+                )}
             </div>
           )}
 
           {tab === "istruzioni" && (
             <div className="space-y-4">
               <div className="card p-5">
-                <p className="eyebrow mb-2">Istruzioni del test (mostrate al candidato per tutta la prova)</p>
-                <Md>{t.istruzioni}</Md>
+                <TestoModificabile valore={t.istruzioni} onSalva={(istruzioni) => salvaTest({ ...t, istruzioni })}>
+                  <p className="eyebrow mb-2">Istruzioni del test (mostrate al candidato per tutta la prova)</p>
+                  <Md>{t.istruzioni}</Md>
+                </TestoModificabile>
               </div>
               <div className="card p-5">
-                <p className="eyebrow mb-2">Introduzione tecnica (mostrata una volta, prima dell&apos;inizio)</p>
-                <Md>{t.introduzioneTecnica}</Md>
+                <TestoModificabile valore={t.introduzioneTecnica} onSalva={(introduzioneTecnica) => salvaTest({ ...t, introduzioneTecnica })}>
+                  <p className="eyebrow mb-2">Introduzione tecnica (mostrata una volta, prima dell&apos;inizio)</p>
+                  <Md>{t.introduzioneTecnica}</Md>
+                </TestoModificabile>
               </div>
               {t.personaggi.length > 0 && (
                 <div className="card p-5">
@@ -201,10 +248,10 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
             <dl className="mt-2 grid grid-cols-[1fr_auto] gap-y-0.5 font-mono text-xs text-n-600">
               <dt>generazione</dt>
               <dd className="text-right">{euro(rec.costo)}</dd>
-              <dt>modifiche (rigenerazioni)</dt>
+              <dt>modifiche AI</dt>
               <dd className="text-right">{euro(rec.costo_modifiche ?? 0)}</dd>
             </dl>
-            <p className="hint">Costo reale addebitato da OpenRouter, in dollari.</p>
+            <p className="hint">Costo reale addebitato da OpenRouter, in dollari. Le modifiche a mano non costano nulla.</p>
           </div>
           <div className="card p-5">
             <p className="eyebrow mb-3">Dimensioni e pesi</p>
@@ -235,22 +282,39 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
   );
 }
 
-function CardItem({
-  testId,
-  item,
-  tipo,
-  feedback,
-  ricarica,
-}: {
-  testId: string;
-  item: EmailGenerata | DomandaGenerata;
-  tipo: "inBasket" | "situational";
-  feedback: Feedback[];
-  ricarica: () => void;
-}) {
+function CardItem({ ctx, item, tipo, feedback }: { ctx: Ctx; item: EmailGenerata | DomandaGenerata; tipo: "inBasket" | "situational"; feedback: Feedback[] }) {
   const e = tipo === "inBasket" ? (item as EmailGenerata) : null;
   const d = tipo === "situational" ? (item as DomandaGenerata) : null;
   const [interno, setInterno] = useState(false);
+  const [modifica, setModifica] = useState(false);
+  const [elimina, setElimina] = useState(false);
+  const [errore, setErrore] = useState("");
+
+  async function salva(nuovo: EmailGenerata | DomandaGenerata) {
+    await ctx.salvaTest(conElemento(ctx.test, item.ref, nuovo));
+    setModifica(false);
+  }
+  async function confermaElimina() {
+    try {
+      await ctx.salvaTest(conElemento(ctx.test, item.ref, null));
+    } catch (x) {
+      setErrore((x as Error).message);
+    }
+  }
+
+  if (modifica)
+    return (
+      <article className="card overflow-hidden ring-2 ring-a-500/40">
+        <div className="border-b border-n-50 bg-n-25 px-5 py-3 text-sm">
+          <span className="font-mono text-xs font-medium text-n-900">{item.ref}</span> <span className="text-n-400">in modifica</span>
+        </div>
+        {e ? (
+          <EditorEmail valore={e} subDisponibili={ctx.subDisponibili} personaggi={ctx.personaggi} onSalva={salva} onAnnulla={() => setModifica(false)} />
+        ) : (
+          <EditorDomanda valore={d!} subDisponibili={ctx.subDisponibili} onSalva={salva} onAnnulla={() => setModifica(false)} />
+        )}
+      </article>
+    );
 
   return (
     <article className="card overflow-hidden">
@@ -270,7 +334,27 @@ function CardItem({
             {d?.outputAISimulato && <Badge tono="info">output AI</Badge>}
             {item.contieneTrappola && <Badge tono="warn">trappola {item.tipoTrappola}</Badge>}
           </span>
+          <span className="flex">
+            <BottoneIcona titolo={`Modifica ${item.ref}`} onClick={() => setModifica(true)}>
+              <IconaMatita />
+            </BottoneIcona>
+            <BottoneIcona titolo={`Elimina ${item.ref}`} pericolo onClick={() => setElimina(true)}>
+              <IconaCestino />
+            </BottoneIcona>
+          </span>
         </div>
+        {elimina && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-[4px] border border-err/30 bg-err-50 px-3 py-2 text-sm">
+            <span className="text-n-800">Eliminare {item.ref}? Non si può annullare.</span>
+            <button className="btn-sm btn rounded-[4px] bg-err text-white" onClick={confermaElimina}>
+              Elimina
+            </button>
+            <button className="btn-ghost btn-sm" onClick={() => setElimina(false)}>
+              Annulla
+            </button>
+            {errore && <span className="text-xs text-err">{errore}</span>}
+          </div>
+        )}
         <p className="mt-1.5 text-xs leading-relaxed text-n-600">{item.motivazione}</p>
       </div>
 
@@ -330,7 +414,7 @@ function CardItem({
         )}
       </div>
 
-      <FeedbackItem testId={testId} itemRef={item.ref} feedback={feedback} ricarica={ricarica} />
+      <FeedbackItem testId={ctx.testId} itemRef={item.ref} feedback={feedback} ricarica={ctx.ricarica} />
     </article>
   );
 }
@@ -395,7 +479,7 @@ function FeedbackItem({ testId, itemRef, feedback, ricarica }: { testId: string;
           <button className="btn-ghost btn-sm" disabled={!!busy} onClick={() => invia("da_rivedere")}>
             Da rivedere
           </button>
-          <button className="btn-dark btn-sm" disabled={!!busy || (!commento.trim() && !feedback.some((f) => f.esito === "da_rivedere"))} onClick={rigenera} title="Riscrive questo elemento tenendo conto dei feedback">
+          <button className="btn-dark btn-sm" disabled={!!busy} onClick={rigenera} title="L'AI riscrive questo elemento tenendo conto dei feedback. Senza commenti lo migliora in generale.">
             {busy === "rigenera" ? "Riscrivo…" : "Rigenera"}
           </button>
         </div>
@@ -469,6 +553,151 @@ function Copertura({ rec, items }: { rec: RecordTest; items: (EmailGenerata | Do
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** Aggiunta di un'email o di una domanda: scritta dall'AI su indicazione, oppure a mano. */
+function AggiungiElemento({ ctx, blocco }: { ctx: Ctx; blocco?: string }) {
+  const t = ctx.test;
+  const inBasket = t.tipo === "inBasket";
+  const nome = inBasket ? "email" : "domanda";
+  const [aperto, setAperto] = useState(false);
+  const [modo, setModo] = useState<"ai" | "mano">("ai");
+  const ultimoRitardo = Math.max(0, ...t.email.map((e) => e.ritardo));
+  const [idea, setIdea] = useState("");
+  const [subs, setSubs] = useState<string[]>([]);
+  const [trappola, setTrappola] = useState<TipoTrappola>("nessuna");
+  const [ritardo, setRitardo] = useState(Math.min(ultimoRitardo + 5, Math.round(t.durata * 0.75)));
+  const [critica, setCritica] = useState(false);
+  const [aScelta, setAScelta] = useState(true);
+  const [outputAI, setOutputAI] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [errore, setErrore] = useState("");
+
+  if (!aperto)
+    return (
+      <button className="w-full rounded-[4px] border border-dashed border-n-200 py-3 text-sm text-n-600 transition-colors hover:border-a-500 hover:text-a-700" onClick={() => setAperto(true)}>
+        + Aggiungi {nome}
+        {blocco ? ` al blocco "${blocco}"` : ""}
+      </button>
+    );
+
+  const ref = nuovoRef(t);
+  async function generaConAI() {
+    if (!subs.length) return setErrore("Scegli almeno una sotto-dimensione");
+    setBusy(true);
+    setErrore("");
+    try {
+      await api(`/api/tests/${ctx.testId}/aggiungi`, inBasket ? { idea, sottoDimensioni: subs, trappola, ritardo, critica } : { idea, sottoDimensioni: subs, trappola, blocco, rispostaAScelta: aScelta, conOutputAI: outputAI });
+      setAperto(false);
+      setIdea("");
+      setSubs([]);
+      ctx.ricarica();
+    } catch (e) {
+      setErrore((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function salvaManuale(nuovo: EmailGenerata | DomandaGenerata) {
+    const agg: TestGenerato = inBasket
+      ? { ...t, email: [...t.email, nuovo as EmailGenerata] }
+      : { ...t, blocchi: t.blocchi.map((b) => (b.titolo === blocco ? { ...b, domande: [...b.domande, nuovo as DomandaGenerata] } : b)) };
+    await ctx.salvaTest(agg);
+    setAperto(false);
+  }
+  const candidato = t.email[0]?.destinatario ?? "";
+
+  return (
+    <div className="card overflow-hidden ring-2 ring-a-500/40">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-n-50 bg-n-25 px-5 py-3">
+        <span className="text-sm">
+          <span className="font-mono text-xs font-medium text-n-900">{ref}</span> <span className="text-n-600">nuova {nome}</span>
+        </span>
+        <Segmented
+          value={modo}
+          onChange={setModo}
+          options={[
+            { value: "ai", label: "Scrive l'AI" },
+            { value: "mano", label: "Scrivo io" },
+          ]}
+        />
+      </div>
+      {modo === "mano" ? (
+        inBasket ? (
+          <EditorEmail valore={emailVuota(ref, ritardo, candidato)} subDisponibili={ctx.subDisponibili} personaggi={ctx.personaggi} onSalva={salvaManuale} onAnnulla={() => setAperto(false)} />
+        ) : (
+          <EditorDomanda valore={domandaVuota(ref, blocco!)} subDisponibili={ctx.subDisponibili} onSalva={salvaManuale} onAnnulla={() => setAperto(false)} />
+        )
+      ) : (
+        <div className="space-y-3 px-5 py-4">
+          <label className="block">
+            <span className="label">Cosa deve contenere</span>
+            <textarea
+              className="field"
+              rows={3}
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              placeholder={inBasket ? "Es. un fornitore chiede di anticipare una consegna con un prezzo più alto, il budget è già al limite" : "Es. l'AI propone una graduatoria dei candidati usando dati sanitari"}
+            />
+            <span className="hint">Facoltativo. Se lo lasci vuoto l&apos;AI sceglie una situazione coerente con lo scenario.</span>
+          </label>
+          <div>
+            <span className="label">Sotto-dimensioni da testare</span>
+            <SceltaSottoDimensioni disponibili={ctx.subDisponibili} valore={subs} onChange={setSubs} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block">
+              <span className="label">Trappola</span>
+              <select className="field" value={trappola} onChange={(e) => setTrappola(e.target.value as TipoTrappola)}>
+                <option value="nessuna">Nessuna</option>
+                {Object.entries(TRAPPOLE).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {inBasket ? (
+              <>
+                <label className="block">
+                  <span className="label">Arrivo (minuti dall&apos;inizio)</span>
+                  <input className="field" type="number" min={0} value={ritardo} onChange={(e) => setRitardo(Number(e.target.value))} />
+                </label>
+                <label className="flex items-end gap-2 pb-2 text-sm">
+                  <input type="checkbox" checked={critica} onChange={(e) => setCritica(e.target.checked)} />
+                  Email critica
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="label">Tipo di risposta</span>
+                  <select className="field" value={aScelta ? "s" : "a"} onChange={(e) => setAScelta(e.target.value === "s")}>
+                    <option value="s">A scelta</option>
+                    <option value="a">Aperta</option>
+                  </select>
+                </label>
+                <label className="flex items-end gap-2 pb-2 text-sm">
+                  <input type="checkbox" checked={outputAI} onChange={(e) => setOutputAI(e.target.checked)} />
+                  Con output AI da valutare
+                </label>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button className="btn-primary btn-sm" disabled={busy} onClick={generaConAI}>
+              {busy ? "Scrivo… (circa 1 minuto)" : `Genera ${nome}`}
+            </button>
+            <button className="btn-ghost btn-sm" disabled={busy} onClick={() => setAperto(false)}>
+              Annulla
+            </button>
+            <span className="hint mt-0">Costo stimato circa $0,10, sommato alle modifiche AI.</span>
+            {errore && <span className="text-xs text-err">{errore}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,51 +1,12 @@
 import { gestisci } from "@/lib/api";
-import { aggiornaTest, getTest } from "@/lib/db";
+import { getTest } from "@/lib/db";
 import { generaItems } from "@/lib/generatore";
-import { validaTest } from "@/lib/regole";
-import type { DomandaGenerata, EmailGenerata, Scenario, TestGenerato } from "@/lib/types";
+import { scenarioDaTest } from "@/lib/modifica-test";
+import { salvaModifica } from "@/lib/salva-modifica";
+import type { DomandaGenerata, EmailGenerata } from "@/lib/types";
 
 export const maxDuration = 300;
 type Ctx = { params: Promise<{ id: string }> };
-
-/** Ricostruisce lo scenario (piano incluso) a partire dal test salvato. */
-function scenarioDaTest(t: TestGenerato): Scenario {
-  const piano =
-    t.tipo === "inBasket"
-      ? t.email.map((e) => ({
-          ref: e.ref,
-          sottoDimensioni: e.sottoDimensioni,
-          categoria: e.categoria,
-          critica: e.critica,
-          trappola: e.tipoTrappola,
-          ideaTrappola: e.descrizioneTrappola,
-          mittente: e.mittente,
-          ritardo: e.ritardo,
-          sintesi: `${e.oggetto}. ${e.corpo.slice(0, 200)}`,
-          motivazione: e.motivazione,
-        }))
-      : t.blocchi.flatMap((b) =>
-          b.domande.map((d) => ({
-            ref: d.ref,
-            blocco: b.titolo,
-            sottoDimensioni: d.sottoDimensioni,
-            rispostaAScelta: d.rispostaAScelta,
-            conOutputAI: !!d.outputAISimulato,
-            trappola: d.tipoTrappola,
-            ideaTrappola: d.descrizioneTrappola,
-            sintesi: d.testo.slice(0, 220),
-            motivazione: d.motivazione,
-          }))
-        );
-  return {
-    nome: t.nome,
-    settoreScenario: t.settoreScenario,
-    istruzioni: t.istruzioni,
-    introduzioneTecnica: t.introduzioneTecnica,
-    personaggi: t.personaggi,
-    blocchi: t.blocchi.map((b) => ({ titolo: b.titolo })),
-    piano,
-  };
-}
 
 export const POST = gestisci(async (req: Request, ctx: Ctx) => {
   const id = (await ctx.params).id;
@@ -64,13 +25,6 @@ export const POST = gestisci(async (req: Request, ctx: Ctx) => {
       ...b,
       domande: b.domande.map((d) => (d.ref === ref ? { ...(nuovo as DomandaGenerata), blocco: b.titolo } : d)),
     }));
-  const problemi = validaTest(t);
-  try {
-    await aggiornaTest(id, { test: t, problemi, costo_modifiche: Number(rec.costo_modifiche ?? 0) + costo });
-  } catch (e) {
-    // database senza la colonna costo_modifiche: il costo si somma a quello totale
-    if (!String(e).includes("costo_modifiche")) throw e;
-    await aggiornaTest(id, { test: t, problemi, costo: Number(rec.costo) + costo });
-  }
+  const problemi = await salvaModifica(rec, t, costo);
   return { item: nuovo, problemi };
 });
