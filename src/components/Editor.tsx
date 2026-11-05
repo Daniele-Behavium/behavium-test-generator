@@ -1,9 +1,10 @@
 "use client";
 // Modifica manuale di titolo, istruzioni ed elementi del test.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { CategoriaEmail, DomandaGenerata, EmailGenerata, OpzioneRisposta, TipoTrappola } from "@/lib/types";
 import { getSottoDimensione } from "@/lib/catalog";
 import { DESCR_TRAPPOLE } from "@/lib/regole";
+import { Md } from "@/components/ui";
 
 export const CATEGORIE: Record<CategoriaEmail, string> = {
   strategicDeadline: "Scadenza strategica",
@@ -42,18 +43,109 @@ export function BottoneIcona({ titolo, onClick, children, pericolo }: { titolo: 
 }
 
 // ---------- campi ----------
+type AzioneMd = { titolo: string; etichetta: React.ReactNode; tipo: "avvolgi" | "riga" | "blocco"; segno: string };
+const AZIONI_MD: AzioneMd[] = [
+  { titolo: "Grassetto", etichetta: <b>B</b>, tipo: "avvolgi", segno: "**" },
+  { titolo: "Corsivo", etichetta: <i className="font-serif">I</i>, tipo: "avvolgi", segno: "*" },
+  { titolo: "Titoletto", etichetta: "H", tipo: "riga", segno: "## " },
+  { titolo: "Elenco puntato", etichetta: "• Elenco", tipo: "riga", segno: "- " },
+  { titolo: "Elenco numerato", etichetta: "1. Elenco", tipo: "riga", segno: "1. " },
+  { titolo: "Tabella", etichetta: "Tabella", tipo: "blocco", segno: "| Colonna 1 | Colonna 2 | Colonna 3 |\n|---|---|---|\n| | | |\n| | | |" },
+];
+
+/** Applica un'azione di formattazione al testo selezionato. Restituisce il nuovo testo e la nuova selezione. */
+function applica(a: AzioneMd, testo: string, inizio: number, fine: number): [string, number, number] {
+  const sel = testo.slice(inizio, fine);
+  if (a.tipo === "avvolgi") {
+    const dentro = sel || "testo";
+    return [testo.slice(0, inizio) + a.segno + dentro + a.segno + testo.slice(fine), inizio + a.segno.length, inizio + a.segno.length + dentro.length];
+  }
+  if (a.tipo === "blocco") {
+    const prima = inizio > 0 && testo[inizio - 1] !== "\n" ? "\n\n" : inizio > 0 && testo[inizio - 2] !== "\n" ? "\n" : "";
+    const ins = prima + a.segno + "\n";
+    return [testo.slice(0, inizio) + ins + testo.slice(fine), inizio + prima.length, inizio + ins.length];
+  }
+  // riga: prefisso su ogni riga selezionata (o la riga del cursore); se c'è già lo toglie
+  const da = testo.lastIndexOf("\n", inizio - 1) + 1;
+  const aIdx = testo.indexOf("\n", fine);
+  const a2 = aIdx === -1 ? testo.length : aIdx;
+  const righe = testo.slice(da, a2).split("\n");
+  const togli = righe.every((r) => r.startsWith(a.segno) || (a.segno === "1. " && /^\d+\. /.test(r)));
+  const nuove = righe.map((r, i) => (togli ? r.replace(a.segno === "1. " ? /^\d+\. / : a.segno, "") : (a.segno === "1. " ? `${i + 1}. ` : a.segno) + r.replace(/^(- |\d+\. |#+ )/, "")));
+  let blocco = nuove.join("\n");
+  // in markdown un elenco va separato con una riga vuota dal testo che lo segue o precede, altrimenti lo "assorbe"
+  const elenco = !togli && a.segno !== "## ";
+  const dopo = testo.slice(a2);
+  const primaRiga = testo.slice(0, da).split("\n").slice(-2, -1)[0] ?? "";
+  const pre = elenco && da > 0 && primaRiga.trim() && !/^(- |\d+\. )/.test(primaRiga) ? "\n" : "";
+  if (elenco && dopo.length > 1 && dopo[1] !== "\n" && !/^\n(- |\d+\. )/.test(dopo)) blocco += "\n";
+  return [testo.slice(0, da) + pre + blocco + dopo, da + pre.length, da + pre.length + blocco.length];
+}
+
+/** Campo di testo in markdown con barra di formattazione e anteprima affiancata. */
 function AreaTesto({ valore, onChange, righeMin = 3, placeholder }: { valore: string; onChange: (v: string) => void; righeMin?: number; placeholder?: string }) {
-  const righe = Math.min(30, Math.max(righeMin, valore.split("\n").length + Math.floor(valore.length / 110)));
-  return <textarea className="field font-mono text-[13px] leading-relaxed" rows={righe} value={valore} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />;
+  const rif = useRef<HTMLTextAreaElement>(null);
+  const [anteprima, setAnteprima] = useState(false);
+  const righe = Math.min(30, Math.max(righeMin, valore.split("\n").length + Math.floor(valore.length / (anteprima ? 55 : 110))));
+
+  function esegui(a: AzioneMd) {
+    const ta = rif.current;
+    if (!ta) return;
+    const [nuovo, s1, s2] = applica(a, valore, ta.selectionStart, ta.selectionEnd);
+    onChange(nuovo);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(s1, s2);
+    });
+  }
+  function tasti(e: React.KeyboardEvent) {
+    if (!(e.metaKey || e.ctrlKey)) return;
+    const a = e.key === "b" ? AZIONI_MD[0] : e.key === "i" ? AZIONI_MD[1] : null;
+    if (a) {
+      e.preventDefault();
+      esegui(a);
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[4px] border border-n-100 bg-white focus-within:border-n-300">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-n-50 bg-n-25 px-1.5 py-1">
+        {AZIONI_MD.map((a) => (
+          <button key={a.titolo} type="button" title={a.titolo} onMouseDown={(e) => e.preventDefault()} onClick={() => esegui(a)} className="min-w-7 rounded-[3px] px-2 py-0.5 text-xs text-n-600 hover:bg-n-50 hover:text-n-900">
+            {a.etichetta}
+          </button>
+        ))}
+        <button type="button" onClick={() => setAnteprima(!anteprima)} className={`ml-auto rounded-[3px] px-2 py-0.5 text-xs ${anteprima ? "bg-n-900 text-white" : "text-n-600 hover:bg-n-50"}`}>
+          Anteprima
+        </button>
+      </div>
+      <div className={anteprima ? "grid md:grid-cols-2" : ""}>
+        <textarea
+          ref={rif}
+          className="block w-full resize-y border-0 bg-transparent px-3 py-2 font-mono text-[13px] leading-relaxed outline-none"
+          rows={righe}
+          value={valore}
+          placeholder={placeholder}
+          onKeyDown={tasti}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {anteprima && (
+          <div className="max-h-[720px] overflow-y-auto border-t border-n-50 px-4 py-2 md:border-l md:border-t-0">
+            {valore.trim() ? <Md>{valore}</Md> : <p className="text-sm text-n-300">Niente da mostrare</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function Campo({ nome, aiuto, children }: { nome: string; aiuto?: string; children: React.ReactNode }) {
   return (
-    <label className="block">
+    <div>
       <span className="label">{nome}</span>
       {children}
       {aiuto && <span className="hint">{aiuto}</span>}
-    </label>
+    </div>
   );
 }
 
@@ -166,7 +258,7 @@ export function EditorEmail({ valore, subDisponibili, personaggi, onSalva, onAnn
       <Campo nome="Oggetto">
         <input className="field" value={e.oggetto} onChange={(x) => set({ oggetto: x.target.value })} />
       </Campo>
-      <Campo nome="Corpo" aiuto="Markdown: **grassetto**, elenchi con - all'inizio della riga.">
+      <Campo nome="Corpo">
         <AreaTesto valore={e.corpo} onChange={(v) => set({ corpo: v })} righeMin={8} />
       </Campo>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -221,7 +313,7 @@ export function EditorDomanda({ valore, subDisponibili, onSalva, onAnnulla }: Pr
 
   return (
     <div className="space-y-3 px-5 py-4">
-      <Campo nome="Testo della domanda" aiuto="Markdown: **grassetto**, elenchi con - all'inizio della riga, tabelle.">
+      <Campo nome="Testo della domanda">
         <AreaTesto valore={d.testo} onChange={(v) => set({ testo: v })} righeMin={6} />
       </Campo>
       <Campo nome="Output AI simulato" aiuto="Lascia vuoto se la domanda non mostra un output dell'AI.">
