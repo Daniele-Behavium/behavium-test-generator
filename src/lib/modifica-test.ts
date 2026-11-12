@@ -117,3 +117,45 @@ export function scenarioDaTest(t: TestGenerato): Scenario {
     piano,
   };
 }
+
+/**
+ * Una singola modifica al test. Il server la applica alla versione più recente salvata,
+ * così due modifiche fatte in parallelo (es. due "Rigenera") non si cancellano a vicenda.
+ */
+export type Operazione =
+  | { tipo: "campi"; campi: Partial<Pick<TestGenerato, "nome" | "istruzioni" | "introduzioneTecnica">> }
+  | { tipo: "sostituisci"; ref: string; item: EmailGenerata | DomandaGenerata }
+  | { tipo: "elimina"; ref: string }
+  | { tipo: "aggiungi"; item: EmailGenerata | DomandaGenerata; blocco?: string };
+
+export function applicaOperazione(t: TestGenerato, op: Operazione): TestGenerato {
+  const refs = t.tipo === "inBasket" ? t.email.map((e) => e.ref) : t.blocchi.flatMap((b) => b.domande.map((d) => d.ref));
+  switch (op.tipo) {
+    case "campi": {
+      const c = op.campi;
+      return {
+        ...t,
+        ...(c.nome !== undefined ? { nome: c.nome } : {}),
+        ...(c.istruzioni !== undefined ? { istruzioni: c.istruzioni } : {}),
+        ...(c.introduzioneTecnica !== undefined ? { introduzioneTecnica: c.introduzioneTecnica } : {}),
+      };
+    }
+    case "sostituisci":
+    case "elimina": {
+      if (!refs.includes(op.ref)) throw new Error(`${op.ref} non esiste più nel test (forse è stato eliminato)`);
+      const nuovo = op.tipo === "sostituisci" ? { ...op.item, ref: op.ref } : null;
+      if (t.tipo === "inBasket") return { ...t, email: t.email.flatMap((e) => (e.ref !== op.ref ? [e] : nuovo ? [nuovo as EmailGenerata] : [])) };
+      return {
+        ...t,
+        blocchi: t.blocchi.map((b) => ({ ...b, domande: b.domande.flatMap((d) => (d.ref !== op.ref ? [d] : nuovo ? [{ ...(nuovo as DomandaGenerata), blocco: b.titolo }] : [])) })),
+      };
+    }
+    case "aggiungi": {
+      // se nel frattempo qualcun altro ha usato lo stesso ref, ne prende uno nuovo
+      const item = refs.includes(op.item.ref) ? { ...op.item, ref: nuovoRef(t) } : op.item;
+      if (t.tipo === "inBasket") return { ...t, email: [...t.email, item as EmailGenerata] };
+      if (!t.blocchi.some((b) => b.titolo === op.blocco)) throw new Error("Blocco non trovato");
+      return { ...t, blocchi: t.blocchi.map((b) => (b.titolo === op.blocco ? { ...b, domande: [...b.domande, { ...(item as DomandaGenerata), blocco: b.titolo }] } : b)) };
+    }
+  }
+}

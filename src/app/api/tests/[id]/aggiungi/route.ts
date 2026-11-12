@@ -3,7 +3,7 @@ import { getTest } from "@/lib/db";
 import { generaItems } from "@/lib/generatore";
 import { nuovoRef, scenarioDaTest } from "@/lib/modifica-test";
 import { salvaModifica } from "@/lib/salva-modifica";
-import type { CategoriaEmail, DomandaGenerata, EmailGenerata, PianoItem, TipoTrappola } from "@/lib/types";
+import type { CategoriaEmail, PianoItem, TipoTrappola } from "@/lib/types";
 
 export const maxDuration = 300;
 type Ctx = { params: Promise<{ id: string }> };
@@ -65,8 +65,6 @@ export const POST = gestisci(async (req: Request, ctx: Ctx) => {
   const nuovo = items[0];
   if (!nuovo) throw new Error("L'AI non ha prodotto l'elemento richiesto");
 
-  if (inBasket) t.email.push(nuovo as EmailGenerata);
-  else t.blocchi = t.blocchi.map((b) => (b.titolo === r.blocco ? { ...b, domande: [...b.domande, { ...(nuovo as DomandaGenerata), blocco: b.titolo }] } : b));
-  const problemi = await salvaModifica(rec, t, costo);
+  const problemi = await salvaModifica(id, { tipo: "aggiungi", item: nuovo, blocco: r.blocco }, costo);
   return { item: nuovo, problemi };
 });
