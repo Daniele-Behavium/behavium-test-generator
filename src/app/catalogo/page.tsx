@@ -18,7 +18,7 @@ export default function Catalogo() {
               <div className="flex items-center gap-2">
                 <h2 className="font-semibold">{d.nome}</h2>
                 <span className={`chip ${d.tipoSkill === "ai" ? "bg-a-50 text-a-700" : "bg-info-50 text-info"}`}>{d.tipoSkill === "ai" ? "AI skill" : "Soft skill"}</span>
-                <span className="ml-auto font-mono text-[11px] text-n-300">{d.id}</span>
+                <span className="ml-auto font-mono text-[13px] text-n-300">{d.id}</span>
               </div>
               <p className="mt-1 text-sm text-n-600">{d.declaratoria}</p>
             </div>

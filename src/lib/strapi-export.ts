@@ -4,8 +4,11 @@
 // Sotto-dimensione e motivazione di ogni elemento NON vengono esportate: servono solo alla revisione.
 
 import type { TestGenerato } from "./types";
+import { pesoValutazione } from "./valutazioni";
+import { normalizzaTest } from "./modifica-test";
 
-export function versoStrapi(t: TestGenerato) {
+export function versoStrapi(test: TestGenerato) {
+  const t = normalizzaTest(test);
   return {
     name: t.nome,
     type: t.tipo,
@@ -45,7 +48,7 @@ export function versoStrapi(t: TestGenerato) {
               simulatedAiOutput: d.outputAISimulato,
               expectedBehavior: d.comportamentoAtteso,
               isMultipleChoice: d.rispostaAScelta,
-              responseOptions: d.opzioni.map((o) => ({ text: o.testo, evaluation: o.valutazione })),
+              responseOptions: d.opzioni.map((o) => ({ label: o.testo, weight: pesoValutazione(o.valutazione) })),
               dimensions: d.dimensioni,
             })),
           })),

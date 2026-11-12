@@ -92,7 +92,7 @@ export const schemaDomande = obj({
       outputAISimulato: str("Output AI pre-scritto mostrato al candidato, vuoto se non previsto"),
       comportamentoAtteso: str("Uso interno: cosa ci si aspetta dal candidato"),
       rispostaAScelta: bool(),
-      opzioni: arr(obj({ testo: str(), valutazione: en(["migliore", "accettabile", "da_evitare"]) }), "Vuoto se domanda aperta"),
+      opzioni: arr(obj({ testo: str(), valutazione: en(["migliore", "accettabile", "discreta", "da_evitare"]) }), "Vuoto se domanda aperta"),
       contieneTrappola: bool(),
       tipoTrappola: en(TRAPPOLE),
       descrizioneTrappola: str(),

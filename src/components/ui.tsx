@@ -2,11 +2,12 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getSottoDimensione } from "@/lib/catalog";
+import { sistemaTabelle } from "@/lib/markdown";
 
 export function Md({ children }: { children: string }) {
   return (
     <div className="prose-bh">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children || ""}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{sistemaTabelle(children || "")}</ReactMarkdown>
     </div>
   );
 }

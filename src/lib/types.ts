@@ -125,7 +125,8 @@ export interface EmailGenerata {
 
 export interface OpzioneRisposta {
   testo: string;
-  valutazione: "migliore" | "accettabile" | "da_evitare";
+  /** Livello dell'opzione: migliore 1, accettabile 0,66, discreta 0,33, da evitare 0. Vedi valutazioni.ts */
+  valutazione: "migliore" | "accettabile" | "discreta" | "da_evitare";
 }
 
 export interface DomandaGenerata {

@@ -4,6 +4,7 @@
 
 import type { InputTest, Scenario, TestGenerato, Problema, SelezioneDimensione, CategoriaEmail } from "./types";
 import { dimensioneDi, getSottoDimensione, getDimensione } from "./catalog";
+import { ID_VALUTAZIONI, nomeValutazione } from "./valutazioni";
 
 const nomeSub = (id: string) => getSottoDimensione(id)?.sub.nome ?? id;
 const nomeDim = (id: string) => getDimensione(id)?.nome ?? id;
@@ -38,8 +39,8 @@ export const REGOLE = {
     blocchiMax: 4,
     aperteMinConsigliate: 2,
     trappoleMinConsigliate: 1,
-    opzioniMin: 3,
-    opzioniMax: 5,
+    opzioniMin: 4,
+    opzioniMax: 4,
   },
   sottoDimensioniMaxPerItem: 2,
   copertureConsigliate: 2, // quante volte ogni sotto-dimensione dovrebbe essere testata
@@ -96,7 +97,7 @@ export function regolePerPrompt(tipo: InputTest["tipo"], durata: number): string
   return [
     `- Budget di tempo: ${durata} minuti. Stima ${r.minutiDomandaAScelta} min per domanda a scelta, ${r.minutiDomandaAperta} min per domanda aperta, +${r.minutiExtraOutputAI} min se c'è un output AI da valutare. Il tempo totale stimato NON deve superare ${Math.round(durata * r.tolleranzaTempo)} minuti (orientativamente ${n} domande con un mix di aperte e a scelta; meno domande se molte sono aperte).`,
     `- Domande organizzate in ${r.blocchiMin}-${r.blocchiMax} blocchi (consentite ${r.domandeMin}-${r.domandeMax} domande).`,
-    `- Ogni domanda è una situazione lavorativa concreta. Può essere aperta (risposta scritta) o a scelta (3-5 alternative di comportamento, esattamente una "migliore").`,
+    `- Ogni domanda è una situazione lavorativa concreta. Può essere aperta (risposta scritta) o a scelta (4 alternative di comportamento, una per livello: migliore, accettabile, discreta, da evitare).`,
     `- Consigliate almeno ${r.aperteMinConsigliate} domande aperte e almeno ${r.trappoleMinConsigliate} domanda con trappola. Le trappole sulle AI skill stanno di solito in un "output AI simulato" pre-scritto (mai AI reale) che il candidato deve valutare.`,
     `- Ogni domanda testa 1 o al massimo ${REGOLE.sottoDimensioniMaxPerItem} sotto-dimensioni tra quelle selezionate; ogni sotto-dimensione selezionata è testata da almeno 1 domanda (meglio ${REGOLE.copertureConsigliate}).`,
   ].join("\n");
@@ -209,17 +210,19 @@ export function validaTest(test: TestGenerato): Problema[] {
   } else {
     const domande = test.blocchi.flatMap((b) => b.domande);
     controllaCopertura(domande, test.dimensioni, out);
-    const r = REGOLE.situational;
     for (const d of domande) {
       if (!d.testo?.trim()) out.push({ livello: "errore", ref: d.ref, messaggio: "Testo vuoto." });
       if (!d.comportamentoAtteso?.trim()) out.push({ livello: "errore", ref: d.ref, messaggio: "Comportamento atteso vuoto." });
       if (d.contieneTrappola && !d.descrizioneTrappola?.trim())
         out.push({ livello: "errore", ref: d.ref, messaggio: "Trappola senza descrizione." });
       if (d.rispostaAScelta) {
-        if (d.opzioni.length < r.opzioniMin || d.opzioni.length > r.opzioniMax)
-          out.push({ livello: "errore", ref: d.ref, messaggio: `Servono tra ${r.opzioniMin} e ${r.opzioniMax} alternative.` });
-        const migliori = d.opzioni.filter((o) => o.valutazione === "migliore").length;
-        if (migliori !== 1) out.push({ livello: "errore", ref: d.ref, messaggio: `Le alternative "migliori" sono ${migliori}: deve essercene esattamente una.` });
+        const doppie = ID_VALUTAZIONI.filter((v) => d.opzioni.filter((o) => o.valutazione === v).length > 1);
+        if (doppie.length)
+          out.push({ livello: "errore", ref: d.ref, messaggio: `Valutazioni ripetute (${doppie.map(nomeValutazione).join(", ")}): ogni opzione deve avere un livello diverso.` });
+        if (!d.opzioni.some((o) => o.valutazione === "migliore")) out.push({ livello: "errore", ref: d.ref, messaggio: `Manca l'opzione "Migliore".` });
+        if (d.opzioni.length < 2) out.push({ livello: "errore", ref: d.ref, messaggio: "Servono almeno 2 alternative." });
+        else if (d.opzioni.length !== ID_VALUTAZIONI.length)
+          out.push({ livello: "avviso", ref: d.ref, messaggio: `Le alternative sono ${d.opzioni.length}: di norma sono ${ID_VALUTAZIONI.length}, una per livello.` });
       }
     }
   }

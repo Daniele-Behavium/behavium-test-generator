@@ -28,6 +28,21 @@
   --color-err-50: #fbeaea;
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Testi di 2px più grandi dei valori standard di Tailwind, per leggibilità */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.35rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.75rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.85rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.95rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.1rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.4rem;
 }
 
 html,
@@ -61,7 +76,7 @@ body {
     @apply w-full rounded-[4px] border border-n-100 bg-white px-3 py-2 text-sm text-n-900 placeholder:text-n-300 focus:border-a-500 focus:ring-2 focus:ring-a-100 focus:outline-none;
   }
   .label {
-    @apply mb-1.5 block text-[13px] font-medium text-n-800;
+    @apply mb-1.5 block text-[15px] font-medium text-n-800;
   }
   .hint {
     @apply mt-1 text-xs text-n-400;
@@ -70,10 +85,10 @@ body {
     @apply rounded-md border border-n-100 bg-white;
   }
   .eyebrow {
-    @apply font-mono text-[11px] tracking-[0.08em] text-n-400 uppercase;
+    @apply font-mono text-[13px] tracking-[0.08em] text-n-400 uppercase;
   }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-[3px] px-1.5 py-0.5 font-mono text-[11px] leading-4;
+    @apply inline-flex items-center gap-1 rounded-[3px] px-1.5 py-0.5 font-mono text-[13px] leading-4;
   }
   .prose-bh {
     @apply text-sm leading-relaxed text-n-800;

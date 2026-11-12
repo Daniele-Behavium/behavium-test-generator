@@ -143,8 +143,9 @@ export function promptItems(i: InputTest, a: Analisi, sc: Scenario, refs: string
 - rispetta ref, mittente, ritardo, categoria, critica, trappola e sotto-dimensioni del piano.`
       : `Per ogni domanda:
 - "testo": una situazione lavorativa concreta e la domanda, coerente con lo scenario. Livello adatto a ${seniority}.
+- Tabelle in markdown: sempre con la riga di separazione |---| sotto l'intestazione, una riga per riga di tabella.
 - "outputAISimulato": se il piano prevede output AI, scrivi l'output completo e realistico che uno strumento AI avrebbe prodotto, con la trappola inserita in modo naturale; altrimenti stringa vuota.
-- domande a scelta: 4 alternative di comportamento plausibili e di lunghezza simile, esattamente una "migliore", almeno una "da_evitare". Domande aperte: "opzioni" vuoto.
+- domande a scelta: esattamente 4 alternative di comportamento plausibili e di lunghezza simile, una per ciascun livello e senza ripetizioni: "migliore" (peso 1), "accettabile" (0,66), "discreta" (0,33), "da_evitare" (0). La differenza tra livelli vicini deve essere netta e motivabile rispetto alla griglia, non di sfumatura. Mescola l'ordine: la "migliore" non deve stare sempre nella stessa posizione. Domande aperte: "opzioni" vuoto.
 - "comportamentoAtteso" (uso interno): comportamenti osservabili attesi, collegati ai livelli alti della griglia.
 - "descrizioneTrappola" (uso interno): cosa è sbagliato e cosa dovrebbe notare il candidato. Vuota se nessuna trappola.
 - rispetta ref, blocco, tipo, trappola e sotto-dimensioni del piano.`;

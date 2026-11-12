@@ -132,7 +132,7 @@ function RigaRegola({ r, aggiorna }: { r: Regola; aggiorna: (id: string, p: Part
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Badge>{AMBITI[r.ambito]}</Badge>
-        <span className="font-mono text-[11px] text-n-400">
+        <span className="font-mono text-[13px] text-n-400">
           {r.origine === "manuale" ? "manuale" : "da feedback"} · {r.autore}
         </span>
         <span className="ml-auto flex gap-1.5">

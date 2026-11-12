@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="sticky top-0 z-20 bg-n-950 text-white">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="relative grid h-8 w-8 place-items-center rounded-[3px] bg-a-500 text-[13px] font-semibold">
+              <span className="relative grid h-8 w-8 place-items-center rounded-[3px] bg-a-500 text-[15px] font-semibold">
                 Bh
                 <span className="absolute top-0.5 left-1 font-mono text-[7px] opacity-80">01</span>
               </span>

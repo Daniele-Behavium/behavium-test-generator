@@ -4,6 +4,7 @@ import type { DomandaGenerata, EmailGenerata, Feedback, RecordTest, TestGenerato
 import { getDimensione, getSottoDimensione } from "@/lib/catalog";
 import { versoStrapi } from "@/lib/strapi-export";
 import { domandaVuota, emailVuota, nuovoRef } from "@/lib/modifica-test";
+import { etichettaValutazione } from "@/lib/valutazioni";
 import { Md, SubChip, Badge, Segmented, api, euro } from "@/components/ui";
 import { BottoneIcona, CATEGORIE as NOMI_CAT, EditorDomanda, EditorEmail, IconaCestino, IconaMatita, SceltaSottoDimensioni, TestoModificabile, TRAPPOLE } from "@/components/Editor";
 
@@ -229,7 +230,7 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
                     {t.personaggi.map((p) => (
                       <li key={p.nome} className="text-sm">
                         <span className="font-medium">{p.nome}</span> <span className="text-n-400">· {p.ruolo}</span>
-                        <span className="block font-mono text-[11px] text-n-300">{p.relazione}</span>
+                        <span className="block font-mono text-[13px] text-n-300">{p.relazione}</span>
                       </li>
                     ))}
                   </ul>
@@ -272,7 +273,7 @@ export default function PaginaTest({ params }: { params: Promise<{ id: string }>
             </ul>
           </div>
           <FeedbackGlobale testId={id} feedback={fb.filter((f) => !f.item_ref)} ricarica={carica} />
-          <div className="font-mono text-[11px] leading-5 text-n-400">
+          <div className="font-mono text-[13px] leading-5 text-n-400">
             <p>modello: {rec.modello}</p>
             <p>catalogo: {rec.catalogo_versione}</p>
           </div>
@@ -387,7 +388,7 @@ function CardItem({ ctx, item, tipo, feedback }: { ctx: Ctx; item: EmailGenerata
                   <li key={i} className="flex gap-2 text-sm">
                     <span className="font-mono text-xs text-n-400">{String.fromCharCode(65 + i)}</span>
                     <span className="flex-1">{o.testo}</span>
-                    {interno && <Badge tono={o.valutazione === "migliore" ? "ok" : o.valutazione === "da_evitare" ? "err" : "neutro"}>{o.valutazione.replace("_", " ")}</Badge>}
+                    {interno && <Badge tono={o.valutazione === "migliore" ? "ok" : o.valutazione === "da_evitare" ? "err" : o.valutazione === "discreta" ? "warn" : "neutro"}>{etichettaValutazione(o.valutazione)}</Badge>}
                   </li>
                 ))}
               </ol>
@@ -426,7 +427,7 @@ function ListaFeedback({ feedback }: { feedback: Feedback[] }) {
       {feedback.map((f) => (
         <li key={f.id} className="text-sm">
           <Badge tono={f.esito === "ok" ? "ok" : "warn"}>{f.esito === "ok" ? "ok" : "da rivedere"}</Badge>{" "}
-          <span className="font-mono text-[11px] text-n-400">{f.autore}</span> {f.commento && <span className="text-n-800">{f.commento}</span>}
+          <span className="font-mono text-[13px] text-n-400">{f.autore}</span> {f.commento && <span className="text-n-800">{f.commento}</span>}
         </li>
       ))}
     </ul>
@@ -526,11 +527,11 @@ function Copertura({ rec, items }: { rec: RecordTest; items: (EmailGenerata | Do
           <tr className="border-b border-n-100">
             <th className="px-4 py-2 text-left font-medium">Sotto-dimensione</th>
             {items.map((it) => (
-              <th key={it.ref} className="px-1.5 py-2 text-center font-mono text-[11px] font-normal text-n-400">
+              <th key={it.ref} className="px-1.5 py-2 text-center font-mono text-[13px] font-normal text-n-400">
                 {it.ref}
               </th>
             ))}
-            <th className="px-3 py-2 text-right font-mono text-[11px] font-normal text-n-400">tot</th>
+            <th className="px-3 py-2 text-right font-mono text-[13px] font-normal text-n-400">tot</th>
           </tr>
         </thead>
         <tbody>

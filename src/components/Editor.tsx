@@ -5,6 +5,7 @@ import type { CategoriaEmail, DomandaGenerata, EmailGenerata, OpzioneRisposta, T
 import { getSottoDimensione } from "@/lib/catalog";
 import { DESCR_TRAPPOLE } from "@/lib/regole";
 import { Md } from "@/components/ui";
+import { VALUTAZIONI, etichettaValutazione } from "@/lib/valutazioni";
 
 export const CATEGORIE: Record<CategoriaEmail, string> = {
   strategicDeadline: "Scadenza strategica",
@@ -122,7 +123,7 @@ function AreaTesto({ valore, onChange, righeMin = 3, placeholder }: { valore: st
       <div className={anteprima ? "grid md:grid-cols-2" : ""}>
         <textarea
           ref={rif}
-          className="block w-full resize-y border-0 bg-transparent px-3 py-2 font-mono text-[13px] leading-relaxed outline-none"
+          className="block w-full resize-y border-0 bg-transparent px-3 py-2 font-mono text-[15px] leading-relaxed outline-none"
           rows={righe}
           value={valore}
           placeholder={placeholder}
@@ -307,9 +308,11 @@ export function EditorDomanda({ valore, subDisponibili, onSalva, onAnnulla }: Pr
       ? "Scegli almeno una sotto-dimensione"
       : d.rispostaAScelta && piene.length < 2
         ? "Servono almeno 2 opzioni"
-        : d.rispostaAScelta && piene.filter((o) => o.valutazione === "migliore").length !== 1
-          ? "Serve esattamente un'opzione \"Migliore\""
-          : undefined;
+        : d.rispostaAScelta && new Set(piene.map((o) => o.valutazione)).size !== piene.length
+          ? "Ogni opzione deve avere una valutazione diversa"
+          : d.rispostaAScelta && !piene.some((o) => o.valutazione === "migliore")
+            ? "Manca l'opzione \"Migliore\""
+            : undefined;
 
   return (
     <div className="space-y-3 px-5 py-4">
@@ -335,19 +338,21 @@ export function EditorDomanda({ valore, subDisponibili, onSalva, onAnnulla }: Pr
           {d.opzioni.map((o, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="pt-2 font-mono text-xs text-n-400">{String.fromCharCode(65 + i)}</span>
-              <textarea className="field flex-1 text-sm" rows={2} value={o.testo} onChange={(x) => setOpz(i, { testo: x.target.value })} />
-              <select className="field w-36 shrink-0" value={o.valutazione} onChange={(x) => setOpz(i, { valutazione: x.target.value as OpzioneRisposta["valutazione"] })}>
-                <option value="migliore">Migliore</option>
-                <option value="accettabile">Accettabile</option>
-                <option value="da_evitare">Da evitare</option>
+              <textarea className="field flex-1 text-sm" rows={3} value={o.testo} onChange={(x) => setOpz(i, { testo: x.target.value })} />
+              <select className="field w-48 shrink-0" value={o.valutazione} onChange={(x) => setOpz(i, { valutazione: x.target.value as OpzioneRisposta["valutazione"] })}>
+                {VALUTAZIONI.map((v) => (
+                  <option key={v.id} value={v.id} disabled={v.id !== o.valutazione && d.opzioni.some((x) => x.valutazione === v.id)}>
+                    {etichettaValutazione(v.id)}
+                  </option>
+                ))}
               </select>
               <BottoneIcona titolo="Elimina opzione" pericolo onClick={() => set({ opzioni: d.opzioni.filter((_, j) => j !== i) })}>
                 <IconaCestino />
               </BottoneIcona>
             </div>
           ))}
-          {d.opzioni.length < 6 && (
-            <button type="button" className="text-xs font-medium text-a-700 hover:underline" onClick={() => set({ opzioni: [...d.opzioni, { testo: "", valutazione: "accettabile" }] })}>
+          {d.opzioni.length < VALUTAZIONI.length && (
+            <button type="button" className="text-xs font-medium text-a-700 hover:underline" onClick={() => set({ opzioni: [...d.opzioni, { testo: "", valutazione: VALUTAZIONI.find((v) => !d.opzioni.some((x) => x.valutazione === v.id))!.id }] })}>
               + Aggiungi opzione
             </button>
           )}

@@ -20,7 +20,7 @@ export default function Nav() {
           <Link
             key={v.href}
             href={v.href}
-            className={`rounded-[3px] px-2.5 py-1.5 text-[13px] transition-colors ${attivo ? "bg-n-800 text-white" : "text-n-200 hover:text-white"}`}
+            className={`rounded-[3px] px-2.5 py-1.5 text-[15px] transition-colors ${attivo ? "bg-n-800 text-white" : "text-n-200 hover:text-white"}`}
           >
             {v.label}
           </Link>

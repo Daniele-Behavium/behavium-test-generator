@@ -1,6 +1,7 @@
 // Funzioni per modificare un test già generato (usate da client e server).
 import type { DomandaGenerata, EmailGenerata, Scenario, TestGenerato } from "./types";
 import { dimensioneDi, getSottoDimensione } from "./catalog";
+import { sistemaTabelle } from "./markdown";
 
 /** Prossimo ref libero: E9 dopo E8, Q16 dopo Q15. */
 export function nuovoRef(t: TestGenerato): string {
@@ -41,7 +42,7 @@ export function domandaVuota(ref: string, blocco: string): DomandaGenerata {
     opzioni: [
       { testo: "", valutazione: "migliore" },
       { testo: "", valutazione: "accettabile" },
-      { testo: "", valutazione: "accettabile" },
+      { testo: "", valutazione: "discreta" },
       { testo: "", valutazione: "da_evitare" },
     ],
     contieneTrappola: false,
@@ -58,11 +59,17 @@ export function normalizzaTest(t: TestGenerato): TestGenerato {
   const fix = <T extends EmailGenerata | DomandaGenerata>(it: T): T => {
     const subs = it.sottoDimensioni.filter((s) => getSottoDimensione(s));
     const tipoTrappola = it.contieneTrappola ? (it.tipoTrappola === "nessuna" ? "T-GEN" : it.tipoTrappola) : "nessuna";
-    return { ...it, sottoDimensioni: subs, dimensioni: Array.from(new Set(subs.map((s) => dimensioneDi(s)!))), tipoTrappola, descrizioneTrappola: it.contieneTrappola ? it.descrizioneTrappola : "" };
+    const testi =
+      "corpo" in it
+        ? { corpo: sistemaTabelle((it as EmailGenerata).corpo) }
+        : { testo: sistemaTabelle((it as DomandaGenerata).testo), outputAISimulato: sistemaTabelle((it as DomandaGenerata).outputAISimulato) };
+    return { ...it, ...testi, sottoDimensioni: subs, dimensioni: Array.from(new Set(subs.map((s) => dimensioneDi(s)!))), tipoTrappola, descrizioneTrappola: it.contieneTrappola ? it.descrizioneTrappola : "" };
   };
   return {
     ...t,
     nome: t.nome.trim(),
+    istruzioni: sistemaTabelle(t.istruzioni),
+    introduzioneTecnica: sistemaTabelle(t.introduzioneTecnica),
     email: t.email.map((e) => fix({ ...e, ritardo: Math.max(0, Math.round(Number(e.ritardo) || 0)) })).sort((a, b) => a.ritardo - b.ritardo),
     blocchi: t.blocchi.map((b) => ({
       ...b,

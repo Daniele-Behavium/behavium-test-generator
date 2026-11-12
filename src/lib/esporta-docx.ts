@@ -25,6 +25,8 @@ import { gfm } from "micromark-extension-gfm";
 import type { RootContent, PhrasingContent, List } from "mdast";
 import type { TestGenerato } from "./types";
 import { getDimensione, getSottoDimensione } from "./catalog";
+import { nomeValutazione, pesoTesto } from "./valutazioni";
+import { sistemaTabelle } from "./markdown";
 
 const FONT = "Arial";
 const GRIGIO = "6B7280";
@@ -39,7 +41,6 @@ const CATEGORIE: Record<string, string> = {
   agendaOverlap: "Agenda sovrapposta",
   other: "Altro",
 };
-const VALUTAZIONI: Record<string, string> = { migliore: "Migliore", accettabile: "Accettabile", da_evitare: "Da evitare" };
 
 // ---------- markdown → paragrafi Word ----------
 let istanzaElenco = 0;
@@ -131,7 +132,7 @@ function tabellaMd(righe: ParagraphChild[][][]) {
 
 function md(testo: string) {
   if (!testo?.trim()) return [new Paragraph({ children: [new TextRun({ text: "(vuoto)", color: GRIGIO, italics: true })] })];
-  const albero = fromMarkdown(testo, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] });
+  const albero = fromMarkdown(sistemaTabelle(testo), { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] });
   return blocchiMd(albero.children);
 }
 
@@ -243,14 +244,14 @@ export async function testInWord(t: TestGenerato): Promise<Blob> {
               width: { size: LARGHEZZA, type: WidthType.DXA },
               columnWidths: [w1, w2, w3],
               rows: [
-                new TableRow({ tableHeader: true, children: [cella([new TextRun({ text: "", size: 18 })], w1, true), cella([new TextRun({ text: "Testo (text)", bold: true, size: 18 })], w2, true), cella([new TextRun({ text: "Valutazione (evaluation)", bold: true, size: 18 })], w3, true)] }),
+                new TableRow({ tableHeader: true, children: [cella([new TextRun({ text: "", size: 18 })], w1, true), cella([new TextRun({ text: "Etichetta (label)", bold: true, size: 18 })], w2, true), cella([new TextRun({ text: "Peso (weight)", bold: true, size: 18 })], w3, true)] }),
                 ...d.opzioni.map(
                   (o, i) =>
                     new TableRow({
                       children: [
                         cella([new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String.fromCharCode(65 + i), bold: true })] })], w1),
                         cella(md(o.testo), w2),
-                        cella([new TextRun({ text: VALUTAZIONI[o.valutazione] ?? o.valutazione, size: 20 })], w3),
+                        cella([new TextRun({ text: pesoTesto(o.valutazione), bold: true, size: 20 }), new TextRun({ text: `  ${nomeValutazione(o.valutazione)}`, color: GRIGIO, size: 18 })], w3),
                       ],
                     })
                 ),

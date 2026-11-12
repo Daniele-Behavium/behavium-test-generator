@@ -3,12 +3,13 @@ import { assembla } from "@/lib/assembla";
 import { listaTest, salvaTest } from "@/lib/db";
 import { validaTest } from "@/lib/regole";
 import { catalogo } from "@/lib/catalog";
+import { normalizzaTest } from "@/lib/modifica-test";
 
 export const GET = gestisci(async () => listaTest());
 
 export const POST = gestisci(async (req: Request) => {
   const { input, analisi, scenario, items, modello, costo } = await req.json();
-  const test = assembla(input, analisi, scenario, items);
+  const test = normalizzaTest(assembla(input, analisi, scenario, items));
   const problemi = validaTest(test);
   const id = await salvaTest({
     autore: await nomeUtente(),
